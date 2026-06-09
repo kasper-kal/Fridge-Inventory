@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Fridge & Freezer Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Inventory product operations
+  - name: ai
+    description: AI parsing operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +26,120 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      parameters:
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [fridge, freezer]
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /products/summary:
+    get:
+      operationId: getProductsSummary
+      tags: [products]
+      summary: Get counts by location
+      responses:
+        "200":
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsSummary"
+
+  /ai/parse-receipt:
+    post:
+      operationId: parseReceipt
+      tags: [ai]
+      summary: Parse OCR text into structured product data using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseReceiptInput"
+      responses:
+        "200":
+          description: Parsed product items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParsedItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +150,80 @@ components:
       required:
         - status
 
+    Product:
+      type: object
+      required: [id, name, quantity, unit, storageLocation, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+          enum: [fridge, freezer]
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required: [name, quantity, unit, storageLocation]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+          enum: [fridge, freezer]
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+        unit:
+          type: string
+        storageLocation:
+          type: string
+          enum: [fridge, freezer]
+
+    ProductsSummary:
+      type: object
+      required: [fridge, freezer, total]
+      properties:
+        fridge:
+          type: integer
+        freezer:
+          type: integer
+        total:
+          type: integer
+
+    ParseReceiptInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+
+    ParsedItem:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        quantity:
+          type: ["number", "null"]
+        unit:
+          type: ["string", "null"]
