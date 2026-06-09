@@ -26,10 +26,21 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   const closeSwipe = () => { setSwiped(false); setSwipeOffset(0); };
 
   // ── quantity +/– ──────────────────────────────────────────────
+  function stepForUnit(unit: string): number {
+    switch (unit.toLowerCase().trim()) {
+      case "g":   return 100;
+      case "ml":  return 100;
+      case "kg":  return 0.5;
+      case "l":   return 0.5;
+      default:    return 1;
+    }
+  }
+
   const adjustQuantity = useCallback((delta: number) => {
-    const next = Math.max(0, product.quantity + delta);
+    const step = stepForUnit(product.unit);
+    const next = Math.max(0, Math.round((product.quantity + delta * step) * 100) / 100);
     updateProduct(product.id, { quantity: next });
-  }, [product.id, product.quantity, updateProduct]);
+  }, [product.id, product.quantity, product.unit, updateProduct]);
 
   // ── move to other location ─────────────────────────────────────
   const handleMove = useCallback(async () => {
