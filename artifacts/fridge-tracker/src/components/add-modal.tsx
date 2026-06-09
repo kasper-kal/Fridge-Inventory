@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useParseReceipt } from "@workspace/api-client-react";
 import { useProducts } from "@/context/products-context";
+import { UnitSelect } from "@/components/unit-select";
 import { toast } from "sonner";
 import Tesseract from "tesseract.js";
 
@@ -152,24 +153,8 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
             />
           </div>
           <div className="space-y-2 flex-1">
-            <Label htmlFor="unit" className="text-sm font-medium">
-              Eenheid
-            </Label>
-            <Input
-              id="unit"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="st, L, kg..."
-              className="h-12 rounded-xl bg-secondary/20"
-              list="units"
-            />
-            <datalist id="units">
-              <option value="st" />
-              <option value="L" />
-              <option value="ml" />
-              <option value="kg" />
-              <option value="g" />
-            </datalist>
+            <Label className="text-sm font-medium">Eenheid</Label>
+            <UnitSelect value={unit || "st"} onChange={setUnit} />
           </div>
         </div>
 
@@ -449,19 +434,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                       }
                       className="w-20 bg-background"
                     />
-                    <Input
-                      value={item.unit}
-                      onChange={(e) => updateItem(i, "unit", e.target.value)}
-                      className="w-24 bg-background"
-                      list="confirm-units"
+                    <UnitSelect
+                      value={item.unit || "st"}
+                      onChange={(v) => updateItem(i, "unit", v)}
+                      size="sm"
+                      className="w-28"
                     />
-                    <datalist id="confirm-units">
-                      <option value="st" />
-                      <option value="L" />
-                      <option value="ml" />
-                      <option value="kg" />
-                      <option value="g" />
-                    </datalist>
                     <div className="flex bg-background rounded-lg border p-1 ml-auto shrink-0">
                       <button
                         type="button"

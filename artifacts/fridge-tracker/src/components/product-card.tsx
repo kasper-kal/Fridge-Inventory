@@ -4,6 +4,7 @@ import { Trash2, Check, X, Plus, Minus, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { UnitSelect } from "@/components/unit-select";
 
 const SWIPE_THRESHOLD = 60;
 const SWIPE_REVEAL = 148;
@@ -132,12 +133,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
             placeholder="Aantal"
             className="w-24"
           />
-          <Input
-            value={editUnit}
-            onChange={(e) => setEditUnit(e.target.value)}
-            placeholder="Eenheid (bijv. st, L)"
-            className="flex-1"
-          />
+          <UnitSelect value={editUnit} onChange={setEditUnit} size="sm" className="flex-1" />
         </div>
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
