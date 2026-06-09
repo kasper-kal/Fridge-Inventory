@@ -1,25 +1,39 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Product } from "@workspace/api-client-react";
-import { Trash2, Check, X } from "lucide-react";
+import { Trash2, Check, X, Plus, Minus, ArrowLeftRight } from "lucide-react";
 import { useUpdateProduct, useDeleteProduct, getListProductsQueryKey, getGetProductsSummaryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+const SWIPE_THRESHOLD = 60;
+const SWIPE_REVEAL = 148;
+
 export function ProductCard({ product }: { product: Product }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(product.name);
+  const [editName, setEditName]       = useState(product.name);
   const [editQuantity, setEditQuantity] = useState(product.quantity.toString());
-  const [editUnit, setEditUnit] = useState(product.unit);
+  const [editUnit, setEditUnit]       = useState(product.unit);
+
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swiped, setSwiped]           = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const dragging    = useRef(false);
+
   const queryClient = useQueryClient();
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
+  }, [queryClient]);
 
   const updateMutation = useUpdateProduct({
     mutation: {
       onSuccess: () => {
         setIsEditing(false);
-        queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
+        invalidate();
         toast.success("Product bijgewerkt");
       }
     }
@@ -28,83 +42,209 @@ export function ProductCard({ product }: { product: Product }) {
   const deleteMutation = useDeleteProduct({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
+        invalidate();
         toast.success("Product verwijderd");
       }
     }
   });
 
-  const handleSave = () => {
-    updateMutation.mutate({
-      id: product.id,
-      data: {
-        name: editName,
-        quantity: parseFloat(editQuantity) || 0,
-        unit: editUnit,
-      }
-    });
+  // ── quantity +/– ──────────────────────────────────────────────
+  const adjustQuantity = (delta: number) => {
+    const next = Math.max(0, product.quantity + delta);
+    updateMutation.mutate({ id: product.id, data: { quantity: next } });
   };
 
+  // ── move to other location ─────────────────────────────────────
+  const handleMove = () => {
+    const dest = product.storageLocation === "fridge" ? "freezer" : "fridge";
+    const label = dest === "fridge" ? "koelkast" : "vriezer";
+    updateMutation.mutate(
+      { id: product.id, data: { storageLocation: dest } },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast.success(`Verplaatst naar ${label}`);
+          setSwiped(false);
+          setSwipeOffset(0);
+        }
+      }
+    );
+  };
+
+  // ── swipe gesture ──────────────────────────────────────────────
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    dragging.current = false;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    if (!dragging.current) {
+      if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+      dragging.current = true;
+    }
+
+    if (dx > 0 && !swiped) return; // no right-swipe when not open
+
+    const base   = swiped ? -SWIPE_REVEAL : 0;
+    const offset = Math.min(0, Math.max(-SWIPE_REVEAL, base + dx));
+    setSwipeOffset(offset);
+  };
+
+  const onTouchEnd = () => {
+    if (!dragging.current) return;
+    if (swiped) {
+      if (swipeOffset > -(SWIPE_REVEAL - SWIPE_THRESHOLD)) {
+        setSwiped(false);
+        setSwipeOffset(0);
+      } else {
+        setSwiped(true);
+        setSwipeOffset(-SWIPE_REVEAL);
+      }
+    } else {
+      if (swipeOffset < -SWIPE_THRESHOLD) {
+        setSwiped(true);
+        setSwipeOffset(-SWIPE_REVEAL);
+      } else {
+        setSwiped(false);
+        setSwipeOffset(0);
+      }
+    }
+    dragging.current = false;
+  };
+
+  const closeSwipe = () => { setSwiped(false); setSwipeOffset(0); };
+
+  // ── edit mode ──────────────────────────────────────────────────
   if (isEditing) {
     return (
       <div className="bg-card rounded-2xl p-4 border shadow-sm flex flex-col gap-3">
-        <Input 
-          value={editName} 
-          onChange={(e) => setEditName(e.target.value)} 
-          placeholder="Naam" 
+        <Input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          placeholder="Naam"
           className="font-semibold text-lg"
         />
         <div className="flex gap-3">
-          <Input 
-            type="number" 
-            value={editQuantity} 
-            onChange={(e) => setEditQuantity(e.target.value)} 
-            placeholder="Aantal" 
-            className="w-24" 
+          <Input
+            type="number"
+            value={editQuantity}
+            onChange={(e) => setEditQuantity(e.target.value)}
+            placeholder="Aantal"
+            className="w-24"
           />
-          <Input 
-            value={editUnit} 
-            onChange={(e) => setEditUnit(e.target.value)} 
-            placeholder="Eenheid (bijv. st, L)" 
-            className="flex-1" 
+          <Input
+            value={editUnit}
+            onChange={(e) => setEditUnit(e.target.value)}
+            placeholder="Eenheid (bijv. st, L)"
+            className="flex-1"
           />
         </div>
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-            <X className="w-4 h-4 mr-2"/> Annuleren
+            <X className="w-4 h-4 mr-2" /> Annuleren
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
-            <Check className="w-4 h-4 mr-2"/> Opslaan
+          <Button
+            size="sm"
+            onClick={() =>
+              updateMutation.mutate({
+                id: product.id,
+                data: { name: editName, quantity: parseFloat(editQuantity) || 0, unit: editUnit },
+              })
+            }
+            disabled={updateMutation.isPending}
+          >
+            <Check className="w-4 h-4 mr-2" /> Opslaan
           </Button>
         </div>
       </div>
     );
   }
 
+  const destLabel = product.storageLocation === "fridge" ? "Vriezer" : "Koelkast";
+
   return (
-    <div 
-      className="bg-card rounded-2xl p-4 border shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer"
-      onClick={() => setIsEditing(true)}
-    >
-      <div className="flex-1 min-w-0 pr-4">
-        <h3 className="font-semibold text-lg text-card-foreground truncate">{product.name}</h3>
-        <p className="text-sm font-medium text-muted-foreground mt-1">
-          {product.quantity} {product.unit}
-        </p>
+    <div className="relative rounded-2xl overflow-hidden select-none">
+
+      {/* ── Swipe action backdrop ── */}
+      <div className="absolute inset-y-0 right-0 flex items-stretch">
+        {/* Move */}
+        <button
+          onClick={handleMove}
+          disabled={updateMutation.isPending}
+          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-blue-500 text-white text-xs font-semibold active:brightness-90 transition-all"
+        >
+          <ArrowLeftRight className="w-5 h-5" />
+          {destLabel}
+        </button>
+        {/* Delete */}
+        <button
+          onClick={() => deleteMutation.mutate({ id: product.id })}
+          disabled={deleteMutation.isPending}
+          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground text-xs font-semibold active:brightness-90 transition-all rounded-r-2xl"
+        >
+          <Trash2 className="w-5 h-5" />
+          Verwijder
+        </button>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 h-10 w-10 rounded-full"
-        onClick={(e) => {
-          e.stopPropagation();
-          deleteMutation.mutate({ id: product.id });
+
+      {/* ── Card face ── */}
+      <div
+        className="relative bg-card border shadow-sm rounded-2xl flex items-center justify-between transition-transform"
+        style={{
+          transform: `translateX(${swipeOffset}px)`,
+          transition: dragging.current ? "none" : "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
         }}
-        disabled={deleteMutation.isPending}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        <Trash2 className="w-5 h-5" />
-      </Button>
+        {/* Dimming overlay when swiped open on desktop */}
+        {swiped && (
+          <div
+            className="absolute inset-0 z-10 rounded-2xl"
+            onClick={closeSwipe}
+          />
+        )}
+
+        {/* Name + unit — tap to edit */}
+        <div
+          className="flex-1 min-w-0 py-4 pl-4 pr-2 cursor-pointer active:opacity-70 transition-opacity"
+          onClick={() => { if (!swiped) setIsEditing(true); else closeSwipe(); }}
+        >
+          <h3 className="font-semibold text-lg text-card-foreground truncate">{product.name}</h3>
+          <p className="text-sm font-medium text-muted-foreground mt-0.5">
+            {product.unit}
+          </p>
+        </div>
+
+        {/* +/– quantity control */}
+        <div className="flex items-center gap-1 pr-3 py-4 shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); if (swiped) { closeSwipe(); return; } adjustQuantity(-1); }}
+            disabled={updateMutation.isPending || product.quantity <= 0}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all disabled:opacity-30"
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+
+          <span className="text-base font-bold text-card-foreground w-10 text-center tabular-nums">
+            {product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(1)}
+          </span>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); if (swiped) { closeSwipe(); return; } adjustQuantity(1); }}
+            disabled={updateMutation.isPending}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
