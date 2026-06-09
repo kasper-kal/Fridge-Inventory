@@ -1,14 +1,11 @@
-import { useListProducts, getListProductsQueryKey } from "@workspace/api-client-react";
+import { useProducts } from "@/context/products-context";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
 import { Loader2, Refrigerator } from "lucide-react";
 
 export default function FridgePage() {
-  const { data: products, isLoading } = useListProducts(
-    { location: "fridge" },
-    { query: { queryKey: getListProductsQueryKey({ location: "fridge" }) } }
-  );
+  const { fridgeProducts, isLoading } = useProducts();
 
   return (
     <Layout>
@@ -26,7 +23,7 @@ export default function FridgePage() {
           </div>
         ) : (
           <ProductList
-            products={products}
+            products={fridgeProducts}
             emptyIcon={<Refrigerator className="w-10 h-10 text-muted-foreground" />}
             emptyTitle="Je koelkast is leeg"
             emptyMessage="Tik op de + knop hieronder om je eerste product toe te voegen."

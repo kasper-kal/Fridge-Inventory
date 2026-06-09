@@ -1,14 +1,11 @@
-import { useListProducts, getListProductsQueryKey } from "@workspace/api-client-react";
+import { useProducts } from "@/context/products-context";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
 import { Loader2, Snowflake } from "lucide-react";
 
 export default function FreezerPage() {
-  const { data: products, isLoading } = useListProducts(
-    { location: "freezer" },
-    { query: { queryKey: getListProductsQueryKey({ location: "freezer" }) } }
-  );
+  const { freezerProducts, isLoading } = useProducts();
 
   return (
     <Layout>
@@ -26,7 +23,7 @@ export default function FreezerPage() {
           </div>
         ) : (
           <ProductList
-            products={products}
+            products={freezerProducts}
             emptyIcon={<Snowflake className="w-10 h-10 text-muted-foreground" />}
             emptyTitle="Je vriezer is leeg"
             emptyMessage="Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen."

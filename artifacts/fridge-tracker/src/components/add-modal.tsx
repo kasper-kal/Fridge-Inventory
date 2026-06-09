@@ -5,13 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  useCreateProduct,
-  useParseReceipt,
-  getListProductsQueryKey,
-  getGetProductsSummaryQueryKey,
-} from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useParseReceipt } from "@workspace/api-client-react";
+import { useProducts } from "@/context/products-context";
 import { toast } from "sonner";
 import Tesseract from "tesseract.js";
 
@@ -88,30 +83,23 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [location, setLocation] = useState<"fridge" | "freezer">("fridge");
+  const [saving, setSaving] = useState(false);
 
-  const queryClient = useQueryClient();
-  const createMutation = useCreateProduct({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-        toast.success("Item toegevoegd");
-        onClose();
-      },
-    },
-  });
+  const { createProduct } = useProducts();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Naam is verplicht");
-    createMutation.mutate({
-      data: {
-        name: name.trim(),
-        quantity: parseFloat(quantity) || 1,
-        unit: unit.trim() || "st",
-        storageLocation: location,
-      },
+    setSaving(true);
+    await createProduct({
+      name: name.trim(),
+      quantity: parseFloat(quantity) || 1,
+      unit: unit.trim() || "st",
+      storageLocation: location,
     });
+    setSaving(false);
+    toast.success("Item toegevoegd");
+    onClose();
   };
 
   return (
@@ -217,10 +205,10 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
       <div className="pt-4 mt-auto">
         <Button
           type="submit"
-          disabled={createMutation.isPending}
+          disabled={saving}
           className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
         >
-          {createMutation.isPending ? (
+          {saving ? (
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
           ) : (
             <Save className="w-5 h-5 mr-2" />
@@ -239,12 +227,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
     { name: string; quantity: number; unit: string; location: "fridge" | "freezer" }[]
   >([]);
 
+  const [saving, setSaving] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const queryClient = useQueryClient();
+  const { createProduct } = useProducts();
   const parseMutation = useParseReceipt();
-  const createMutation = useCreateProduct();
 
   const processFile = async (file: File) => {
     setStep("ocr");
@@ -298,27 +286,17 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
 
   const handleSaveAll = async () => {
     if (parsedItems.length === 0) return onClose();
-
-    let saved = 0;
+    setSaving(true);
     for (const item of parsedItems) {
-      try {
-        await createMutation.mutateAsync({
-          data: {
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-            storageLocation: item.location,
-          },
-        });
-        saved++;
-      } catch (e) {
-        console.error("Opslaan mislukt", item, e);
-      }
+      await createProduct({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        storageLocation: item.location,
+      });
     }
-
-    queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-    toast.success(`${saved} item${saved !== 1 ? "s" : ""} opgeslagen`);
+    setSaving(false);
+    toast.success(`${parsedItems.length} item${parsedItems.length !== 1 ? "s" : ""} opgeslagen`);
     onClose();
   };
 
@@ -521,9 +499,9 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
           <Button
             className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
             onClick={handleSaveAll}
-            disabled={createMutation.isPending}
+            disabled={saving}
           >
-            {createMutation.isPending ? (
+            {saving ? (
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
             ) : (
               <Save className="w-5 h-5 mr-2" />
