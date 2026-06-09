@@ -1,7 +1,7 @@
 import { useListProducts, getListProductsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
-import { ProductCard } from "@/components/product-card";
+import { ProductList } from "@/components/product-list";
 import { Loader2, Snowflake } from "lucide-react";
 
 export default function FreezerPage() {
@@ -19,31 +19,19 @@ export default function FreezerPage() {
 
       <SummaryStrip />
 
-      <div className="px-6 space-y-4">
+      <div className="px-6 pb-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           </div>
-        ) : products?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in duration-500">
-            <div className="w-20 h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-6">
-              <Snowflake className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Je vriezer is leeg</h3>
-            <p className="text-muted-foreground max-w-[250px]">Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen.</p>
-          </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {products?.map((product, i) => (
-              <div 
-                key={product.id} 
-                className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
-                style={{ animationDelay: `${i * 50}ms`, animationDuration: '400ms' }}
-              >
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
+          <ProductList
+            products={products}
+            emptyIcon={<Snowflake className="w-10 h-10 text-muted-foreground" />}
+            emptyTitle="Je vriezer is leeg"
+            emptyMessage="Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen."
+            accentColor="text-blue-500"
+          />
         )}
       </div>
     </Layout>
