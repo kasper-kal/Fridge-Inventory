@@ -11,7 +11,7 @@ export function BottomNav() {
         <Link href="/">
           <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
             <Refrigerator className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium tracking-wide">Fridge</span>
+            <span className="text-[10px] font-medium tracking-wide">Koelkast</span>
           </div>
         </Link>
 
@@ -22,7 +22,7 @@ export function BottomNav() {
         <Link href="/freezer">
           <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/freezer' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
             <Snowflake className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium tracking-wide">Freezer</span>
+            <span className="text-[10px] font-medium tracking-wide">Vriezer</span>
           </div>
         </Link>
       </div>

@@ -8,13 +8,13 @@ export function SummaryStrip() {
       <div className="bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-2xl flex items-center gap-3 shrink-0">
         <div className="w-2 h-2 rounded-full bg-primary" />
         <span className="text-sm font-medium text-primary-foreground/80 text-foreground">
-          <span className="font-bold text-lg mr-1 text-primary">{summary?.fridge ?? 0}</span> in Fridge
+          <span className="font-bold text-lg mr-1 text-primary">{summary?.fridge ?? 0}</span> in koelkast
         </span>
       </div>
       <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2.5 rounded-2xl flex items-center gap-3 shrink-0">
         <div className="w-2 h-2 rounded-full bg-blue-500" />
         <span className="text-sm font-medium text-foreground">
-          <span className="font-bold text-lg mr-1 text-blue-500">{summary?.freezer ?? 0}</span> in Freezer
+          <span className="font-bold text-lg mr-1 text-blue-500">{summary?.freezer ?? 0}</span> in vriezer
         </span>
       </div>
     </div>

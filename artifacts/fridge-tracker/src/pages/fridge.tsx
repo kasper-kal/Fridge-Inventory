@@ -13,8 +13,8 @@ export default function FridgePage() {
   return (
     <Layout>
       <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-primary/5 to-transparent">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Fridge</h1>
-        <p className="text-muted-foreground mt-1 font-medium">Keep your fresh items organized.</p>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Koelkast</h1>
+        <p className="text-muted-foreground mt-1 font-medium">Houd je verse producten bij.</p>
       </div>
 
       <SummaryStrip />
@@ -29,8 +29,8 @@ export default function FridgePage() {
             <div className="w-20 h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-6">
               <Refrigerator className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Your fridge is empty</h3>
-            <p className="text-muted-foreground max-w-[250px]">Tap the + button below to add your first grocery item.</p>
+            <h3 className="text-xl font-semibold mb-2">Je koelkast is leeg</h3>
+            <p className="text-muted-foreground max-w-[250px]">Tik op de + knop hieronder om je eerste product toe te voegen.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

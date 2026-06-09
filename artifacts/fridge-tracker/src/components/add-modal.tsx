@@ -35,12 +35,12 @@ export function AddModal() {
         </Button>
       </DrawerTrigger>
       <DrawerContent className="bg-card px-6 pb-safe pt-2 border-t border-card-border rounded-t-3xl h-[85vh] max-h-[800px] outline-none">
-        <DrawerTitle className="sr-only">Add Item</DrawerTitle>
+        <DrawerTitle className="sr-only">Item toevoegen</DrawerTitle>
         <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
 
         {view === "menu" && (
           <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold text-card-foreground mb-4">Add to Inventory</h2>
+            <h2 className="text-2xl font-bold text-card-foreground mb-4">Toevoegen aan voorraad</h2>
 
             <button
               onClick={() => setView("scan")}
@@ -50,8 +50,8 @@ export function AddModal() {
                 <Camera className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
-                <div className="font-semibold text-lg text-card-foreground">Scan Receipt</div>
-                <div className="text-sm text-muted-foreground">Auto-detect items using AI</div>
+                <div className="font-semibold text-lg text-card-foreground">Bon scannen</div>
+                <div className="text-sm text-muted-foreground">Items automatisch detecteren met AI</div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -64,8 +64,8 @@ export function AddModal() {
                 <PenLine className="h-6 w-6" />
               </div>
               <div className="flex-1 text-left">
-                <div className="font-semibold text-lg text-card-foreground">Add Manually</div>
-                <div className="text-sm text-muted-foreground">Type details yourself</div>
+                <div className="font-semibold text-lg text-card-foreground">Handmatig toevoegen</div>
+                <div className="text-sm text-muted-foreground">Vul zelf de details in</div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -95,7 +95,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-        toast.success("Item added");
+        toast.success("Item toegevoegd");
         onClose();
       },
     },
@@ -103,12 +103,12 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return toast.error("Name is required");
+    if (!name.trim()) return toast.error("Naam is verplicht");
     createMutation.mutate({
       data: {
         name: name.trim(),
         quantity: parseFloat(quantity) || 1,
-        unit: unit.trim() || "pcs",
+        unit: unit.trim() || "st",
         storageLocation: location,
       },
     });
@@ -120,7 +120,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
       className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300"
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-card-foreground">Add Manually</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">Handmatig toevoegen</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -135,13 +135,13 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
       <div className="space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium">
-            Item Name
+            Productnaam
           </Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Organic Milk"
+            placeholder="bijv. Biologische Melk"
             className="h-12 rounded-xl bg-secondary/20"
             autoFocus
           />
@@ -150,7 +150,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
         <div className="flex gap-4">
           <div className="space-y-2 flex-1">
             <Label htmlFor="qty" className="text-sm font-medium">
-              Quantity
+              Hoeveelheid
             </Label>
             <Input
               id="qty"
@@ -165,18 +165,18 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
           </div>
           <div className="space-y-2 flex-1">
             <Label htmlFor="unit" className="text-sm font-medium">
-              Unit
+              Eenheid
             </Label>
             <Input
               id="unit"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              placeholder="pcs, L, kg..."
+              placeholder="st, L, kg..."
               className="h-12 rounded-xl bg-secondary/20"
               list="units"
             />
             <datalist id="units">
-              <option value="pcs" />
+              <option value="st" />
               <option value="L" />
               <option value="ml" />
               <option value="kg" />
@@ -186,7 +186,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
         </div>
 
         <div className="space-y-3 pt-2">
-          <Label className="text-sm font-medium">Store in</Label>
+          <Label className="text-sm font-medium">Bewaren in</Label>
           <RadioGroup
             value={location}
             onValueChange={(v: "fridge" | "freezer") => setLocation(v)}
@@ -198,7 +198,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
                 htmlFor="fridge-manual"
                 className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50"
               >
-                <div className="font-semibold text-lg text-foreground">Fridge</div>
+                <div className="font-semibold text-lg text-foreground">Koelkast</div>
               </Label>
             </div>
             <div className="flex-1">
@@ -207,7 +207,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
                 htmlFor="freezer-manual"
                 className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50"
               >
-                <div className="font-semibold text-lg text-foreground">Freezer</div>
+                <div className="font-semibold text-lg text-foreground">Vriezer</div>
               </Label>
             </div>
           </RadioGroup>
@@ -225,7 +225,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
           ) : (
             <Save className="w-5 h-5 mr-2" />
           )}
-          Save Item
+          Item opslaan
         </Button>
       </div>
     </form>
@@ -260,7 +260,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
 
       const ocrText = result.data.text.trim();
       if (!ocrText) {
-        toast.error("No text found in image. Try a clearer photo.");
+        toast.error("Geen tekst gevonden in de afbeelding. Probeer een duidelijkere foto.");
         setStep("upload");
         return;
       }
@@ -272,14 +272,14 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
         items.map((i) => ({
           name: i.name,
           quantity: i.quantity ?? 1,
-          unit: i.unit ?? "pcs",
+          unit: i.unit ?? "st",
           location: "fridge" as const,
         }))
       );
       setStep("confirm");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to process receipt. Please try again.");
+      toast.error("Verwerken van bon mislukt. Probeer het opnieuw.");
       setStep("upload");
     }
   };
@@ -312,13 +312,13 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
         });
         saved++;
       } catch (e) {
-        console.error("Failed to save item", item, e);
+        console.error("Opslaan mislukt", item, e);
       }
     }
 
     queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-    toast.success(`Saved ${saved} item${saved !== 1 ? "s" : ""}`);
+    toast.success(`${saved} item${saved !== 1 ? "s" : ""} opgeslagen`);
     onClose();
   };
 
@@ -337,7 +337,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between mb-6 shrink-0">
-        <h2 className="text-2xl font-bold text-card-foreground">Scan Receipt</h2>
+        <h2 className="text-2xl font-bold text-card-foreground">Bon scannen</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -355,13 +355,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
               <Camera className="w-10 h-10" />
             </div>
             <div className="text-center space-y-1">
-              <p className="font-semibold text-card-foreground">Add a receipt image</p>
+              <p className="font-semibold text-card-foreground">Voeg een bonafbeelding toe</p>
               <p className="text-sm text-muted-foreground max-w-[260px]">
-                Text is extracted locally on your device. Only the text is sent to AI — never the image.
+                Tekst wordt lokaal uitgelezen op je apparaat. Alleen de tekst wordt naar AI gestuurd — nooit de afbeelding.
               </p>
             </div>
 
-            {/* Hidden inputs — camera & file are separate so each works correctly */}
             <input
               type="file"
               accept="image/*"
@@ -385,7 +384,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                 onClick={() => cameraInputRef.current?.click()}
               >
                 <Camera className="w-5 h-5 mr-2" />
-                Take Photo
+                Foto nemen
               </Button>
               <Button
                 size="lg"
@@ -394,7 +393,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="w-5 h-5 mr-2" />
-                Upload from Device
+                Uploaden van apparaat
               </Button>
             </div>
           </div>
@@ -414,12 +413,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-xl font-bold">
-                {step === "ocr" ? "Reading Text..." : "Identifying Items..."}
+                {step === "ocr" ? "Tekst lezen..." : "Items identificeren..."}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {step === "ocr"
-                  ? "Scanning your receipt locally"
-                  : "Sending receipt text to AI"}
+                  ? "Bon lokaal scannen op je apparaat"
+                  : "Bontekst naar AI sturen"}
               </p>
             </div>
           </div>
@@ -428,14 +427,14 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
         {step === "confirm" && (
           <div className="space-y-4 pb-4">
             <p className="font-medium text-muted-foreground mb-2">
-              Review {parsedItems.length} detected item{parsedItems.length !== 1 ? "s" : ""}
+              Bekijk {parsedItems.length} gedetecteerd{parsedItems.length !== 1 ? "e items" : " item"}
             </p>
 
             {parsedItems.length === 0 ? (
               <div className="text-center py-12 space-y-3">
-                <p className="text-muted-foreground">No items were detected.</p>
+                <p className="text-muted-foreground">Er zijn geen items gedetecteerd.</p>
                 <Button variant="outline" onClick={() => setStep("upload")}>
-                  Try Again
+                  Opnieuw proberen
                 </Button>
               </div>
             ) : (
@@ -479,7 +478,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                       list="confirm-units"
                     />
                     <datalist id="confirm-units">
-                      <option value="pcs" />
+                      <option value="st" />
                       <option value="L" />
                       <option value="ml" />
                       <option value="kg" />
@@ -495,7 +494,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Fridge
+                        Koelkast
                       </button>
                       <button
                         type="button"
@@ -506,7 +505,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Freezer
+                        Vriezer
                       </button>
                     </div>
                   </div>
@@ -529,7 +528,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
             ) : (
               <Save className="w-5 h-5 mr-2" />
             )}
-            Save All {parsedItems.length} Item{parsedItems.length !== 1 ? "s" : ""}
+            Alle {parsedItems.length} item{parsedItems.length !== 1 ? "s" : ""} opslaan
           </Button>
         </div>
       )}

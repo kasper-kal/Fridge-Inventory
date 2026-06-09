@@ -20,7 +20,7 @@ export function ProductCard({ product }: { product: Product }) {
         setIsEditing(false);
         queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-        toast.success("Product updated");
+        toast.success("Product bijgewerkt");
       }
     }
   });
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-        toast.success("Product deleted");
+        toast.success("Product verwijderd");
       }
     }
   });
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
         <Input 
           value={editName} 
           onChange={(e) => setEditName(e.target.value)} 
-          placeholder="Name" 
+          placeholder="Naam" 
           className="font-semibold text-lg"
         />
         <div className="flex gap-3">
@@ -60,22 +60,22 @@ export function ProductCard({ product }: { product: Product }) {
             type="number" 
             value={editQuantity} 
             onChange={(e) => setEditQuantity(e.target.value)} 
-            placeholder="Qty" 
+            placeholder="Aantal" 
             className="w-24" 
           />
           <Input 
             value={editUnit} 
             onChange={(e) => setEditUnit(e.target.value)} 
-            placeholder="Unit (e.g. pcs, L)" 
+            placeholder="Eenheid (bijv. st, L)" 
             className="flex-1" 
           />
         </div>
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-            <X className="w-4 h-4 mr-2"/> Cancel
+            <X className="w-4 h-4 mr-2"/> Annuleren
           </Button>
           <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
-            <Check className="w-4 h-4 mr-2"/> Save
+            <Check className="w-4 h-4 mr-2"/> Opslaan
           </Button>
         </div>
       </div>

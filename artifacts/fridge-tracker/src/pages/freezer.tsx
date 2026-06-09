@@ -13,8 +13,8 @@ export default function FreezerPage() {
   return (
     <Layout>
       <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-blue-500/5 to-transparent">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Freezer</h1>
-        <p className="text-muted-foreground mt-1 font-medium">Deep freeze inventory.</p>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
+        <p className="text-muted-foreground mt-1 font-medium">Overzicht van je diepvries.</p>
       </div>
 
       <SummaryStrip />
@@ -29,8 +29,8 @@ export default function FreezerPage() {
             <div className="w-20 h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-6">
               <Snowflake className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Nothing in the deep freeze</h3>
-            <p className="text-muted-foreground max-w-[250px]">Store your long-term items here. Tap the + to add.</p>
+            <h3 className="text-xl font-semibold mb-2">Je vriezer is leeg</h3>
+            <p className="text-muted-foreground max-w-[250px]">Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
