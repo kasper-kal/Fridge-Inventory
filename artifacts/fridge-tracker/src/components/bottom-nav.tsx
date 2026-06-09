@@ -1,0 +1,31 @@
+import { Link, useLocation } from "wouter";
+import { Snowflake, Refrigerator } from "lucide-react";
+import { AddModal } from "./add-modal";
+
+export function BottomNav() {
+  const [location] = useLocation();
+
+  return (
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+      <div className="flex items-center justify-around h-20 px-6">
+        <Link href="/">
+          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Refrigerator className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Fridge</span>
+          </div>
+        </Link>
+
+        <div className="-mt-8">
+          <AddModal />
+        </div>
+
+        <Link href="/freezer">
+          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/freezer' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Snowflake className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Freezer</span>
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+}

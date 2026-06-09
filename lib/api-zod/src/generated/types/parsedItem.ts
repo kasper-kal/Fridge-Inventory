@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface ParsedItem {
+  name: string;
+  /** @nullable */
+  quantity?: number | null;
+  /** @nullable */
+  unit?: string | null;
 }
