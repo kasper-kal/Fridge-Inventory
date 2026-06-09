@@ -1,12 +1,12 @@
 import { Router } from "express";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 import { ParseReceiptBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // POST /ai/parse-receipt
@@ -20,9 +20,9 @@ router.post("/parse-receipt", async (req, res) => {
 
     const { text } = body.data;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_completion_tokens: 1024,
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 1024,
       messages: [
         {
           role: "system",
@@ -55,7 +55,7 @@ Rules:
 
     res.json(items);
   } catch (err) {
-    logger.error({ err }, "AI parse-receipt failed");
+    logger.error({ err }, "Groq parse-receipt failed");
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(500).json({ error: "Failed to parse receipt", detail: message });
   }
