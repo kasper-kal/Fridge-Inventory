@@ -1,14 +1,19 @@
 import { useState, useRef } from "react";
+import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Plus, Camera, PenLine, ChevronRight, X, Loader2, Save } from "lucide-react";
-import { useCreateProduct, useParseReceipt, getListProductsQueryKey, getGetProductsSummaryQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import Tesseract from "tesseract.js";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  useCreateProduct,
+  useParseReceipt,
+  getListProductsQueryKey,
+  getGetProductsSummaryQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import Tesseract from "tesseract.js";
 
 export function AddModal() {
   const [open, setOpen] = useState(false);
@@ -22,8 +27,8 @@ export function AddModal() {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button 
-          size="icon" 
+        <Button
+          size="icon"
           className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
         >
           <Plus className="h-7 w-7" />
@@ -32,12 +37,12 @@ export function AddModal() {
       <DrawerContent className="bg-card px-6 pb-safe pt-2 border-t border-card-border rounded-t-3xl h-[85vh] max-h-[800px] outline-none">
         <DrawerTitle className="sr-only">Add Item</DrawerTitle>
         <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
-        
+
         {view === "menu" && (
           <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <h2 className="text-2xl font-bold text-card-foreground mb-4">Add to Inventory</h2>
-            
-            <button 
+
+            <button
               onClick={() => setView("scan")}
               className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
             >
@@ -51,7 +56,7 @@ export function AddModal() {
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
 
-            <button 
+            <button
               onClick={() => setView("manual")}
               className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
             >
@@ -67,20 +72,23 @@ export function AddModal() {
           </div>
         )}
 
-        {view === "manual" && <ManualAddFlow onClose={resetAndClose} onBack={() => setView("menu")} />}
-        {view === "scan" && <ScanReceiptFlow onClose={resetAndClose} onBack={() => setView("menu")} />}
-        
+        {view === "manual" && (
+          <ManualAddFlow onClose={resetAndClose} onBack={() => setView("menu")} />
+        )}
+        {view === "scan" && (
+          <ScanReceiptFlow onClose={resetAndClose} onBack={() => setView("menu")} />
+        )}
       </DrawerContent>
     </Drawer>
   );
 }
 
-function ManualAddFlow({ onClose, onBack }: { onClose: () => void, onBack: () => void }) {
+function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () => void }) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [location, setLocation] = useState<"fridge" | "freezer">("fridge");
-  
+
   const queryClient = useQueryClient();
   const createMutation = useCreateProduct({
     mutation: {
@@ -89,66 +97,81 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void, onBack: () =>
         queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
         toast.success("Item added");
         onClose();
-      }
-    }
+      },
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return toast.error("Name is required");
-    
+    if (!name.trim()) return toast.error("Name is required");
     createMutation.mutate({
       data: {
-        name,
+        name: name.trim(),
         quantity: parseFloat(quantity) || 1,
-        unit: unit || "pcs",
-        storageLocation: location
-      }
+        unit: unit.trim() || "pcs",
+        storageLocation: location,
+      },
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300"
+    >
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-card-foreground">Add Manually</h2>
-        <Button variant="ghost" size="icon" onClick={onBack} type="button" className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          type="button"
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-5 w-5" />
         </Button>
       </div>
 
       <div className="space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">Item Name</Label>
-          <Input 
-            id="name" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            placeholder="e.g. Organic Milk" 
+          <Label htmlFor="name" className="text-sm font-medium">
+            Item Name
+          </Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Organic Milk"
             className="h-12 rounded-xl bg-secondary/20"
             autoFocus
           />
         </div>
-        
+
         <div className="flex gap-4">
           <div className="space-y-2 flex-1">
-            <Label htmlFor="qty" className="text-sm font-medium">Quantity</Label>
-            <Input 
-              id="qty" 
+            <Label htmlFor="qty" className="text-sm font-medium">
+              Quantity
+            </Label>
+            <Input
+              id="qty"
               type="number"
               step="any"
-              value={quantity} 
-              onChange={(e) => setQuantity(e.target.value)} 
-              placeholder="1" 
+              min="0"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="1"
               className="h-12 rounded-xl bg-secondary/20"
             />
           </div>
           <div className="space-y-2 flex-1">
-            <Label htmlFor="unit" className="text-sm font-medium">Unit</Label>
-            <Input 
-              id="unit" 
-              value={unit} 
-              onChange={(e) => setUnit(e.target.value)} 
-              placeholder="pcs, L, kg..." 
+            <Label htmlFor="unit" className="text-sm font-medium">
+              Unit
+            </Label>
+            <Input
+              id="unit"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="pcs, L, kg..."
               className="h-12 rounded-xl bg-secondary/20"
               list="units"
             />
@@ -164,20 +187,24 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void, onBack: () =>
 
         <div className="space-y-3 pt-2">
           <Label className="text-sm font-medium">Store in</Label>
-          <RadioGroup value={location} onValueChange={(v: "fridge"|"freezer") => setLocation(v)} className="flex gap-4">
+          <RadioGroup
+            value={location}
+            onValueChange={(v: "fridge" | "freezer") => setLocation(v)}
+            className="flex gap-4"
+          >
             <div className="flex-1">
-              <RadioGroupItem value="fridge" id="fridge" className="peer sr-only" />
-              <Label 
-                htmlFor="fridge" 
+              <RadioGroupItem value="fridge" id="fridge-manual" className="peer sr-only" />
+              <Label
+                htmlFor="fridge-manual"
                 className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50"
               >
                 <div className="font-semibold text-lg text-foreground">Fridge</div>
               </Label>
             </div>
             <div className="flex-1">
-              <RadioGroupItem value="freezer" id="freezer" className="peer sr-only" />
-              <Label 
-                htmlFor="freezer" 
+              <RadioGroupItem value="freezer" id="freezer-manual" className="peer sr-only" />
+              <Label
+                htmlFor="freezer-manual"
                 className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50"
               >
                 <div className="font-semibold text-lg text-foreground">Freezer</div>
@@ -188,12 +215,16 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void, onBack: () =>
       </div>
 
       <div className="pt-4 mt-auto">
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={createMutation.isPending}
           className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
         >
-          {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2"/> : <Save className="w-5 h-5 mr-2"/>}
+          {createMutation.isPending ? (
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          ) : (
+            <Save className="w-5 h-5 mr-2" />
+          )}
           Save Item
         </Button>
       </div>
@@ -201,50 +232,73 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void, onBack: () =>
   );
 }
 
-function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void, onBack: () => void }) {
+function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () => void }) {
   const [step, setStep] = useState<"upload" | "ocr" | "api" | "confirm">("upload");
   const [ocrProgress, setOcrProgress] = useState(0);
-  const [parsedItems, setParsedItems] = useState<{name: string, quantity: number, unit: string, location: "fridge"|"freezer"}[]>([]);
+  const [parsedItems, setParsedItems] = useState<
+    { name: string; quantity: number; unit: string; location: "fridge" | "freezer" }[]
+  >([]);
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const queryClient = useQueryClient();
   const parseMutation = useParseReceipt();
   const createMutation = useCreateProduct();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     setStep("ocr");
+    setOcrProgress(0);
     try {
       const result = await Tesseract.recognize(file, "eng", {
         logger: (m) => {
           if (m.status === "recognizing text") {
             setOcrProgress(Math.round(m.progress * 100));
           }
-        }
+        },
       });
-      
+
+      const ocrText = result.data.text.trim();
+      if (!ocrText) {
+        toast.error("No text found in image. Try a clearer photo.");
+        setStep("upload");
+        return;
+      }
+
       setStep("api");
-      const items = await parseMutation.mutateAsync({ data: { text: result.data.text } });
-      
-      setParsedItems(items.map(i => ({
-        name: i.name,
-        quantity: i.quantity || 1,
-        unit: i.unit || "pcs",
-        location: "fridge"
-      })));
+      const items = await parseMutation.mutateAsync({ data: { text: ocrText } });
+
+      setParsedItems(
+        items.map((i) => ({
+          name: i.name,
+          quantity: i.quantity ?? 1,
+          unit: i.unit ?? "pcs",
+          location: "fridge" as const,
+        }))
+      );
       setStep("confirm");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to process receipt");
+      toast.error("Failed to process receipt. Please try again.");
       setStep("upload");
     }
   };
 
+  const handleCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+    e.target.value = "";
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+    e.target.value = "";
+  };
+
   const handleSaveAll = async () => {
     if (parsedItems.length === 0) return onClose();
-    
+
     let saved = 0;
     for (const item of parsedItems) {
       try {
@@ -253,36 +307,43 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void, onBack: () 
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
-            storageLocation: item.location
-          }
+            storageLocation: item.location,
+          },
         });
         saved++;
       } catch (e) {
         console.error("Failed to save item", item, e);
       }
     }
-    
+
     queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetProductsSummaryQueryKey() });
-    toast.success(`Saved ${saved} items`);
+    toast.success(`Saved ${saved} item${saved !== 1 ? "s" : ""}`);
     onClose();
   };
 
-  const updateItem = (index: number, field: string, value: any) => {
-    const newItems = [...parsedItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setParsedItems(newItems);
+  const updateItem = (index: number, field: string, value: string | number) => {
+    setParsedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const removeItem = (index: number) => {
-    setParsedItems(parsedItems.filter((_, i) => i !== index));
+    setParsedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <h2 className="text-2xl font-bold text-card-foreground">Scan Receipt</h2>
-        <Button variant="ghost" size="icon" onClick={step === 'upload' ? onBack : () => setStep('upload')} className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={step === "upload" ? onBack : () => { setStep("upload"); setParsedItems([]); }}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-5 w-5" />
         </Button>
       </div>
@@ -290,99 +351,160 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void, onBack: () 
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
         {step === "upload" && (
           <div className="flex flex-col items-center justify-center h-full space-y-6 py-8">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary">
               <Camera className="w-10 h-10" />
             </div>
-            <p className="text-center text-muted-foreground max-w-[250px]">
-              Take a photo of your receipt or upload one from your gallery.
-            </p>
-            <input 
-              type="file" 
-              accept="image/*" 
-              capture="environment" 
-              className="hidden" 
+            <div className="text-center space-y-1">
+              <p className="font-semibold text-card-foreground">Add a receipt image</p>
+              <p className="text-sm text-muted-foreground max-w-[260px]">
+                Text is extracted locally on your device. Only the text is sent to AI — never the image.
+              </p>
+            </div>
+
+            {/* Hidden inputs — camera & file are separate so each works correctly */}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              ref={cameraInputRef}
+              onChange={handleCameraChange}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
               ref={fileInputRef}
               onChange={handleFileChange}
             />
-            <Button 
-              size="lg" 
-              className="w-full max-w-xs h-14 rounded-2xl text-lg font-bold"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Open Camera
-            </Button>
+
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              <Button
+                size="lg"
+                className="w-full h-14 rounded-2xl text-base font-bold"
+                onClick={() => cameraInputRef.current?.click()}
+              >
+                <Camera className="w-5 h-5 mr-2" />
+                Take Photo
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full h-14 rounded-2xl text-base font-bold"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload from Device
+              </Button>
+            </div>
           </div>
         )}
 
         {(step === "ocr" || step === "api") && (
           <div className="flex flex-col items-center justify-center h-full space-y-8 py-12">
             <div className="relative w-24 h-24 flex items-center justify-center">
-              <div className="absolute inset-0 border-4 border-secondary rounded-full"></div>
-              <div 
+              <div className="absolute inset-0 border-4 border-secondary rounded-full" />
+              <div
                 className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"
-                style={{ animationDuration: '1.5s' }}
-              ></div>
-              <span className="text-lg font-bold text-primary">{step === 'ocr' ? `${ocrProgress}%` : 'AI'}</span>
+                style={{ animationDuration: "1.5s" }}
+              />
+              <span className="text-lg font-bold text-primary">
+                {step === "ocr" ? `${ocrProgress}%` : "AI"}
+              </span>
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-xl font-bold">
-                {step === 'ocr' ? 'Reading Text...' : 'Identifying Items...'}
+                {step === "ocr" ? "Reading Text..." : "Identifying Items..."}
               </h3>
-              <p className="text-muted-foreground">This might take a moment.</p>
+              <p className="text-sm text-muted-foreground">
+                {step === "ocr"
+                  ? "Scanning your receipt locally"
+                  : "Sending receipt text to AI"}
+              </p>
             </div>
           </div>
         )}
 
         {step === "confirm" && (
           <div className="space-y-4 pb-4">
-            <p className="font-medium text-muted-foreground mb-4">Review detected items ({parsedItems.length})</p>
-            
+            <p className="font-medium text-muted-foreground mb-2">
+              Review {parsedItems.length} detected item{parsedItems.length !== 1 ? "s" : ""}
+            </p>
+
             {parsedItems.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No items detected.</div>
+              <div className="text-center py-12 space-y-3">
+                <p className="text-muted-foreground">No items were detected.</p>
+                <Button variant="outline" onClick={() => setStep("upload")}>
+                  Try Again
+                </Button>
+              </div>
             ) : (
               parsedItems.map((item, i) => (
-                <div key={i} className="bg-secondary/20 border border-secondary p-4 rounded-2xl space-y-3 relative group">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                <div
+                  key={i}
+                  className="bg-secondary/20 border border-secondary p-4 rounded-2xl space-y-3 relative"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={() => removeItem(i)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
-                  
+
                   <div className="pr-10">
-                    <Input 
-                      value={item.name} 
+                    <Input
+                      value={item.name}
                       onChange={(e) => updateItem(i, "name", e.target.value)}
-                      className="font-semibold text-lg border-transparent bg-transparent hover:bg-secondary/40 focus:bg-background px-2 -ml-2 transition-colors"
+                      className="font-semibold text-base border-transparent bg-transparent hover:bg-secondary/40 focus:bg-background px-2 -ml-2 transition-colors"
                     />
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <Input 
-                      type="number" 
-                      value={item.quantity} 
-                      onChange={(e) => updateItem(i, "quantity", parseFloat(e.target.value) || 0)}
+
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItem(i, "quantity", parseFloat(e.target.value) || 0)
+                      }
                       className="w-20 bg-background"
                     />
-                    <Input 
-                      value={item.unit} 
+                    <Input
+                      value={item.unit}
                       onChange={(e) => updateItem(i, "unit", e.target.value)}
                       className="w-24 bg-background"
+                      list="confirm-units"
                     />
-                    <div className="flex bg-background rounded-md border p-1 ml-auto">
-                      <button 
+                    <datalist id="confirm-units">
+                      <option value="pcs" />
+                      <option value="L" />
+                      <option value="ml" />
+                      <option value="kg" />
+                      <option value="g" />
+                    </datalist>
+                    <div className="flex bg-background rounded-lg border p-1 ml-auto shrink-0">
+                      <button
                         type="button"
                         onClick={() => updateItem(i, "location", "fridge")}
-                        className={`px-3 py-1 text-xs font-medium rounded ${item.location === 'fridge' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                          item.location === "fridge"
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
                       >
                         Fridge
                       </button>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => updateItem(i, "location", "freezer")}
-                        className={`px-3 py-1 text-xs font-medium rounded ${item.location === 'freezer' ? 'bg-blue-500 text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                          item.location === "freezer"
+                            ? "bg-blue-500 text-white"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
                       >
                         Freezer
                       </button>
@@ -395,21 +517,22 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void, onBack: () 
         )}
       </div>
 
-      {step === "confirm" && (
+      {step === "confirm" && parsedItems.length > 0 && (
         <div className="pt-4 mt-auto shrink-0 bg-card border-t -mx-6 px-6 pb-2">
-          <Button 
+          <Button
             className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
             onClick={handleSaveAll}
             disabled={createMutation.isPending}
           >
-            {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2"/> : <Save className="w-5 h-5 mr-2"/>}
-            Save All Items
+            {createMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            ) : (
+              <Save className="w-5 h-5 mr-2" />
+            )}
+            Save All {parsedItems.length} Item{parsedItems.length !== 1 ? "s" : ""}
           </Button>
         </div>
       )}
     </div>
   );
 }
-
-// Need to add Trash2 import that was missed above
-import { Trash2 } from "lucide-react";

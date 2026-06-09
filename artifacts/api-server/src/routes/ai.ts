@@ -1,6 +1,7 @@
 import { Router } from "express";
 import OpenAI from "openai";
 import { ParseReceiptBody } from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.post("/parse-receipt", async (req, res) => {
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      max_tokens: 1024,
+      max_completion_tokens: 1024,
       messages: [
         {
           role: "system",
@@ -30,7 +31,7 @@ Each item must have: "name" (string), "quantity" (number or null), "unit" (strin
 Rules:
 - Extract only food and grocery product names
 - Ignore prices, totals, store names, dates, tax lines
-- Normalize units (e.g. "ltr" → "L", "grams" → "g", "pieces" → "pcs")
+- Normalize units (e.g. "ltr" -> "L", "grams" -> "g", "pieces" -> "pcs")
 - If quantity/unit are unclear, set them to null
 - Return ONLY the JSON array, no markdown, no explanation`,
         },
@@ -54,7 +55,9 @@ Rules:
 
     res.json(items);
   } catch (err) {
-    res.status(500).json({ error: "Failed to parse receipt" });
+    logger.error({ err }, "AI parse-receipt failed");
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: "Failed to parse receipt", detail: message });
   }
 });
 
