@@ -1,12 +1,47 @@
 import { Link, useLocation } from "wouter";
-import { Snowflake, Refrigerator } from "lucide-react";
+import { Snowflake, Refrigerator, Undo2, Redo2 } from "lucide-react";
 import { AddModal } from "./add-modal";
+import { useProducts } from "@/context/products-context";
+import { toast } from "sonner";
 
 export function BottomNav() {
   const [location] = useLocation();
+  const { canUndo, canRedo, undo, redo } = useProducts();
+
+  const handleUndo = () => {
+    undo();
+    toast.info("Ongedaan gemaakt", { duration: 1500 });
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast.info("Opnieuw uitgevoerd", { duration: 1500 });
+  };
 
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+      {/* Undo / Redo bar */}
+      <div className="flex items-center justify-center gap-3 pt-2 px-6">
+        <button
+          onClick={handleUndo}
+          disabled={!canUndo}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-secondary enabled:active:scale-95 text-muted-foreground enabled:hover:text-foreground"
+        >
+          <Undo2 className="w-3.5 h-3.5" />
+          Ongedaan
+        </button>
+        <div className="w-px h-4 bg-border" />
+        <button
+          onClick={handleRedo}
+          disabled={!canRedo}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-secondary enabled:active:scale-95 text-muted-foreground enabled:hover:text-foreground"
+        >
+          <Redo2 className="w-3.5 h-3.5" />
+          Opnieuw
+        </button>
+      </div>
+
+      {/* Main nav */}
       <div className="flex items-center justify-around h-20 px-6">
         <Link href="/">
           <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
