@@ -21,11 +21,15 @@ export function BottomNav() {
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
       {/* Undo / Redo bar */}
-      <div className="flex items-center justify-center gap-3 pt-2 px-6">
+      <div className="flex items-center justify-center gap-2 pt-2.5 px-6">
         <button
           onClick={handleUndo}
           disabled={!canUndo}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-secondary enabled:active:scale-95 text-muted-foreground enabled:hover:text-foreground"
+          className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full border transition-all active:scale-95
+            ${canUndo
+              ? "bg-secondary text-foreground border-border hover:bg-secondary/80 cursor-pointer"
+              : "bg-transparent text-muted-foreground border-border/40 cursor-not-allowed"
+            }`}
         >
           <Undo2 className="w-3.5 h-3.5" />
           Ongedaan
@@ -34,7 +38,11 @@ export function BottomNav() {
         <button
           onClick={handleRedo}
           disabled={!canRedo}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-secondary enabled:active:scale-95 text-muted-foreground enabled:hover:text-foreground"
+          className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full border transition-all active:scale-95
+            ${canRedo
+              ? "bg-secondary text-foreground border-border hover:bg-secondary/80 cursor-pointer"
+              : "bg-transparent text-muted-foreground border-border/40 cursor-not-allowed"
+            }`}
         >
           <Redo2 className="w-3.5 h-3.5" />
           Opnieuw
