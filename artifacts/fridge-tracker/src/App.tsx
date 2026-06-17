@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { HouseholdProvider } from "@/context/household-context";
 import { ProductsProvider } from "@/context/products-context";
 import { ShoppingListProvider } from "@/context/shopping-list-context";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
@@ -32,15 +33,17 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ShoppingListProvider>
-          <ProductsProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <UndoRedoBar />
-            <Toaster position="top-center" />
-          </ProductsProvider>
-        </ShoppingListProvider>
+        <HouseholdProvider>
+          <ShoppingListProvider>
+            <ProductsProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <UndoRedoBar />
+              <Toaster position="top-center" />
+            </ProductsProvider>
+          </ShoppingListProvider>
+        </HouseholdProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

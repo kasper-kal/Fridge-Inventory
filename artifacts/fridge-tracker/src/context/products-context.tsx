@@ -1,8 +1,12 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { useHousehold } from "@/context/household-context";
 
-const STORAGE_KEY = "fridge_tracker_v1";
 const HISTORY_LIMIT = 50;
 const POLL_INTERVAL_MS = 10_000;
+
+function storageKey(householdId?: number) {
+  return householdId ? `fridge_tracker_v1_hh_${householdId}` : "fridge_tracker_v1";
+}
 
 export interface LocalProduct {
   id: number;
@@ -44,9 +48,9 @@ interface ProductsContextValue {
 
 const ProductsContext = createContext<ProductsContextValue | null>(null);
 
-function readStorage(): LocalProduct[] {
+function readStorage(key: string): LocalProduct[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     return JSON.parse(raw) as LocalProduct[];
   } catch {
@@ -54,10 +58,8 @@ function readStorage(): LocalProduct[] {
   }
 }
 
-function writeStorage(products: LocalProduct[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-  } catch {}
+function writeStorage(key: string, products: LocalProduct[]) {
+  try { localStorage.setItem(key, JSON.stringify(products)); } catch {}
 }
 
 function apiUrl(path: string) {
@@ -65,8 +67,10 @@ function apiUrl(path: string) {
   return `${base}${path}`;
 }
 
-async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(apiUrl(path), {
+async function apiFetch(path: string, householdId: number | undefined, options?: RequestInit) {
+  const url = new URL(apiUrl(path), window.location.href);
+  if (householdId) url.searchParams.set("householdId", String(householdId));
+  const res = await fetch(url.toString(), {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -76,8 +80,24 @@ async function apiFetch(path: string, options?: RequestInit) {
 }
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
-  const [products, setProductsRaw] = useState<LocalProduct[]>(() => readStorage());
-  const [isLoading, setIsLoading] = useState(products.length === 0);
+  const { household } = useHousehold();
+  const householdId = household?.id;
+  const key = storageKey(householdId);
+
+  const [products, setProductsRaw] = useState<LocalProduct[]>(() => readStorage(key));
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reset products when household changes
+  const prevHouseholdId = useRef(householdId);
+  useEffect(() => {
+    if (prevHouseholdId.current !== householdId) {
+      prevHouseholdId.current = householdId;
+      past.current = [];
+      future.current = [];
+      setProductsRaw(readStorage(storageKey(householdId)));
+      setIsLoading(true);
+    }
+  }, [householdId]);
 
   // ── undo / redo history ──────────────────────────────────────
   const past   = useRef<LocalProduct[][]>([]);
@@ -89,16 +109,16 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   ) => {
     setProductsRaw((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      writeStorage(next);
+      writeStorage(storageKey(householdId), next);
       if (recordHistory) {
         past.current = [...past.current.slice(-HISTORY_LIMIT + 1), prev];
         future.current = [];
       }
       return next;
     });
-  }, []);
+  }, [householdId]);
 
-  const [historyVersion, setHistoryVersion] = useState(0); // used to force re-render after undo/redo
+  const [, setHistoryVersion] = useState(0);
 
   const undo = useCallback(() => {
     if (past.current.length === 0) return;
@@ -106,11 +126,11 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       const prev = past.current[past.current.length - 1];
       past.current = past.current.slice(0, -1);
       future.current = [current, ...future.current.slice(0, HISTORY_LIMIT - 1)];
-      writeStorage(prev);
+      writeStorage(storageKey(householdId), prev);
       setHistoryVersion((v) => v + 1);
       return prev;
     });
-  }, []);
+  }, [householdId]);
 
   const redo = useCallback(() => {
     if (future.current.length === 0) return;
@@ -118,35 +138,35 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       const next = future.current[0];
       future.current = future.current.slice(1);
       past.current = [...past.current.slice(-HISTORY_LIMIT + 1), current];
-      writeStorage(next);
+      writeStorage(storageKey(householdId), next);
       setHistoryVersion((v) => v + 1);
       return next;
     });
-  }, []);
+  }, [householdId]);
 
   const canUndo = past.current.length > 0;
   const canRedo = future.current.length > 0;
 
   // ── initial sync + polling ────────────────────────────────────
   const syncFromServer = useCallback((isInitial = false) => {
-    apiFetch("/api/products")
+    apiFetch("/api/products", householdId)
       .then((data: LocalProduct[]) => {
         if (Array.isArray(data)) {
           setProductsRaw((current) => {
-            // Only update if server data differs (avoid needless re-renders)
             const serverIds = data.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
             const localIds  = current.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
             if (serverIds === localIds) return current;
-            writeStorage(data);
+            writeStorage(storageKey(householdId), data);
             return data;
           });
         }
       })
       .catch(() => {})
       .finally(() => { if (isInitial) setIsLoading(false); });
-  }, []);
+  }, [householdId]);
 
   useEffect(() => {
+    setIsLoading(true);
     syncFromServer(true);
     const interval = setInterval(() => syncFromServer(false), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -157,32 +177,30 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     const tempId = -Date.now();
     const tempProduct: LocalProduct = { id: tempId, ...data, createdAt: new Date().toISOString() };
     setProducts((prev) => [tempProduct, ...prev]);
-
     try {
-      const saved: LocalProduct = await apiFetch("/api/products", {
+      const saved: LocalProduct = await apiFetch("/api/products", householdId, {
         method: "POST",
         body: JSON.stringify(data),
       });
       setProducts((prev) => prev.map((p) => (p.id === tempId ? saved : p)), false);
     } catch {}
-  }, [setProducts]);
+  }, [setProducts, householdId]);
 
   const updateProduct = useCallback(async (id: number, data: UpdateInput) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
-
     try {
-      const updated: LocalProduct = await apiFetch(`/api/products/${id}`, {
+      const updated: LocalProduct = await apiFetch(`/api/products/${id}`, householdId, {
         method: "PATCH",
         body: JSON.stringify(data),
       });
       setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)), false);
     } catch {}
-  }, [setProducts]);
+  }, [setProducts, householdId]);
 
   const deleteProduct = useCallback(async (id: number) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    if (id > 0) apiFetch(`/api/products/${id}`, { method: "DELETE" }).catch(() => {});
-  }, [setProducts]);
+    if (id > 0) apiFetch(`/api/products/${id}`, householdId, { method: "DELETE" }).catch(() => {});
+  }, [setProducts, householdId]);
 
   const fridgeProducts  = products.filter((p) => p.storageLocation === "fridge");
   const freezerProducts = products.filter((p) => p.storageLocation === "freezer");

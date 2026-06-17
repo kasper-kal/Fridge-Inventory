@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, real, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -8,6 +8,7 @@ export const productsTable = pgTable("products", {
   quantity: real("quantity").notNull().default(1),
   unit: text("unit").notNull().default("pcs"),
   storageLocation: text("storage_location").notNull(),
+  householdId: integer("household_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

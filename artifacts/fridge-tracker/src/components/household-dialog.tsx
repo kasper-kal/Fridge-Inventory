@@ -1,0 +1,195 @@
+import { useState } from "react";
+import { Users, Plus, LogIn, LogOut, Home } from "lucide-react";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useHousehold } from "@/context/household-context";
+import { toast } from "sonner";
+
+function apiUrl(path: string) {
+  const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+  return `${base}${path}`;
+}
+
+async function apiFetch(path: string, options?: RequestInit) {
+  const res = await fetch(apiUrl(path), {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? `Fout ${res.status}`);
+  return data;
+}
+
+export function HouseholdDialog() {
+  const { household, setHousehold, leave } = useHousehold();
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"create" | "join">("create");
+  const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const reset = () => { setName(""); setPin(""); };
+
+  const handleCreate = async () => {
+    if (!name.trim() || !pin.trim()) return;
+    setLoading(true);
+    try {
+      const data = await apiFetch("/api/households", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim(), pin: pin.trim() }),
+      });
+      setHousehold({ id: data.id, name: data.name });
+      toast.success(`Huishouden "${data.name}" aangemaakt!`);
+      reset();
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Aanmaken mislukt");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    if (!name.trim() || !pin.trim()) return;
+    setLoading(true);
+    try {
+      const data = await apiFetch("/api/households/join", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim(), pin: pin.trim() }),
+      });
+      setHousehold({ id: data.id, name: data.name });
+      toast.success(`Welkom bij "${data.name}"!`);
+      reset();
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Inloggen mislukt");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeave = () => {
+    leave();
+    toast.success("Huishouden verlaten");
+    setOpen(false);
+  };
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>
+        <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+          <Users className="w-6 h-6 text-foreground" />
+          {household && (
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+          )}
+        </button>
+      </DrawerTrigger>
+
+      <DrawerContent className="max-w-[430px] mx-auto">
+        <DrawerTitle className="sr-only">Huishouden</DrawerTitle>
+
+        <div className="px-6 pt-6 pb-8 space-y-5">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Home className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Huishouden</h2>
+              <p className="text-sm text-muted-foreground">
+                {household ? `Verbonden met "${household.name}"` : "Deel je koelkast met huisgenoten"}
+              </p>
+            </div>
+          </div>
+
+          {household ? (
+            /* Already in a household */
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-emerald-900">{household.name}</p>
+                  <p className="text-xs text-emerald-700">Iedereen met de naam + pincode ziet dit</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
+                onClick={handleLeave}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Huishouden verlaten
+              </Button>
+            </div>
+          ) : (
+            /* Create or join */
+            <div className="space-y-4">
+              {/* Tabs */}
+              <div className="flex rounded-xl bg-muted p-1 gap-1">
+                {(["create", "join"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => { setTab(t); reset(); }}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                      tab === t ? "bg-background shadow-sm" : "text-muted-foreground"
+                    }`}
+                  >
+                    {t === "create" ? "Aanmaken" : "Lid worden"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                    Naam huishouden
+                  </label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="bijv. Familie de Vries"
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                    Pincode
+                  </label>
+                  <Input
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (tab === "create" ? handleCreate() : handleJoin())}
+                    placeholder="bijv. 1234"
+                    type="password"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={tab === "create" ? handleCreate : handleJoin}
+                disabled={!name.trim() || !pin.trim() || loading}
+              >
+                {tab === "create" ? (
+                  <><Plus className="w-4 h-4 mr-2" />Huishouden aanmaken</>
+                ) : (
+                  <><LogIn className="w-4 h-4 mr-2" />Lid worden</>
+                )}
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                {tab === "create"
+                  ? "Deel de naam + pincode met huisgenoten zodat zij kunnen inloggen."
+                  : "Voer de naam en pincode in die je huisgenoot heeft aangemaakt."}
+              </p>
+            </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

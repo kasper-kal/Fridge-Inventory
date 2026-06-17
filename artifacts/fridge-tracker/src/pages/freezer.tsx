@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
 import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
+import { HouseholdDialog } from "@/components/household-dialog";
 import { Loader2, Snowflake } from "lucide-react";
 
 export default function FreezerPage() {
@@ -16,7 +17,8 @@ export default function FreezerPage() {
             <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
             <p className="text-muted-foreground mt-1 font-medium">Overzicht van je diepvries.</p>
           </div>
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-1">
+            <HouseholdDialog />
             <ShoppingListDrawer />
           </div>
         </div>
