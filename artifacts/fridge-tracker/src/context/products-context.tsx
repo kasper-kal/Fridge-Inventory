@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, Re
 
 const STORAGE_KEY = "fridge_tracker_v1";
 const HISTORY_LIMIT = 50;
+const POLL_INTERVAL_MS = 10_000;
 
 export interface LocalProduct {
   id: number;
@@ -59,8 +60,13 @@ function writeStorage(products: LocalProduct[]) {
   } catch {}
 }
 
+function apiUrl(path: string) {
+  const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+  return `${base}${path}`;
+}
+
 async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -121,19 +127,30 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const canUndo = past.current.length > 0;
   const canRedo = future.current.length > 0;
 
-  // ── initial sync ─────────────────────────────────────────────
-  useEffect(() => {
+  // ── initial sync + polling ────────────────────────────────────
+  const syncFromServer = useCallback((isInitial = false) => {
     apiFetch("/api/products")
       .then((data: LocalProduct[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Sync without recording history
-          setProductsRaw(data);
-          writeStorage(data);
+        if (Array.isArray(data)) {
+          setProductsRaw((current) => {
+            // Only update if server data differs (avoid needless re-renders)
+            const serverIds = data.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
+            const localIds  = current.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
+            if (serverIds === localIds) return current;
+            writeStorage(data);
+            return data;
+          });
         }
       })
       .catch(() => {})
-      .finally(() => setIsLoading(false));
+      .finally(() => { if (isInitial) setIsLoading(false); });
   }, []);
+
+  useEffect(() => {
+    syncFromServer(true);
+    const interval = setInterval(() => syncFromServer(false), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [syncFromServer]);
 
   // ── CRUD ─────────────────────────────────────────────────────
   const createProduct = useCallback(async (data: CreateInput) => {
