@@ -23,7 +23,7 @@ export function UndoRedoBar() {
         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all active:scale-95
           ${canUndo
             ? "bg-secondary text-foreground border-border hover:bg-secondary/80 cursor-pointer"
-            : "bg-transparent text-muted-foreground border-border/40 cursor-not-allowed"
+            : "bg-muted text-muted-foreground border-border cursor-not-allowed"
           }`}
       >
         <Undo2 className="w-3.5 h-3.5" />
@@ -36,7 +36,7 @@ export function UndoRedoBar() {
         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all active:scale-95
           ${canRedo
             ? "bg-secondary text-foreground border-border hover:bg-secondary/80 cursor-pointer"
-            : "bg-transparent text-muted-foreground border-border/40 cursor-not-allowed"
+            : "bg-muted text-muted-foreground border-border cursor-not-allowed"
           }`}
       >
         <Redo2 className="w-3.5 h-3.5" />
