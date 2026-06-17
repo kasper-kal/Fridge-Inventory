@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Jry9VSxuNRs8Mb4TpJyVM"
+uri = "file://attached_assets/generated_images/a_clean_modern_flat_54d1.png"
+type = "image"
+title = "generated_image"
