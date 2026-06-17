@@ -1,16 +1,18 @@
 import { useState, useRef, useCallback } from "react";
 import { LocalProduct, useProducts } from "@/context/products-context";
-import { Trash2, Check, X, Plus, Minus, ArrowLeftRight } from "lucide-react";
+import { useShoppingList } from "@/context/shopping-list-context";
+import { Trash2, Check, X, Plus, Minus, ArrowLeftRight, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UnitSelect } from "@/components/unit-select";
 
 const SWIPE_THRESHOLD = 60;
-const SWIPE_REVEAL = 148;
+const SWIPE_REVEAL = 222;
 
 export function ProductCard({ product }: { product: LocalProduct }) {
   const { updateProduct, deleteProduct } = useProducts();
+  const { addItem } = useShoppingList();
 
   const [isEditing, setIsEditing]       = useState(false);
   const [editName, setEditName]         = useState(product.name);
@@ -25,6 +27,12 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   const dragging    = useRef(false);
 
   const closeSwipe = () => { setSwiped(false); setSwipeOffset(0); };
+
+  const handleAddToList = useCallback(() => {
+    addItem(product.name);
+    toast.success(`${product.name} op boodschappenlijst`);
+    closeSwipe();
+  }, [addItem, product.name]);
 
   // ── quantity +/– ──────────────────────────────────────────────
   function stepForUnit(unit: string): number {
@@ -154,6 +162,13 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
       {/* Swipe action backdrop */}
       <div className="absolute inset-y-0 right-0 flex items-stretch">
+        <button
+          onClick={handleAddToList}
+          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white text-xs font-semibold active:brightness-90 transition-all"
+        >
+          <ShoppingCart className="w-5 h-5" />
+          Lijst
+        </button>
         <button
           onClick={handleMove}
           disabled={pending}

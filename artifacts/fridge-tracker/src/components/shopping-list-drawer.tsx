@@ -140,18 +140,6 @@ export function ShoppingListDrawer() {
           )}
         </div>
 
-        {/* AH Button */}
-        <div className="px-5 pb-6 pt-3 border-t shrink-0">
-          <button
-            onClick={handleOpenAH}
-            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl font-semibold text-white transition-all active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg, #0055a8 0%, #0072da 100%)" }}
-          >
-            <span className="text-lg font-black tracking-tight">AH</span>
-            <span>Voeg toe aan Albert Heijn app</span>
-            <ExternalLink className="w-4 h-4 opacity-70" />
-          </button>
-        </div>
       </DrawerContent>
     </Drawer>
   );
