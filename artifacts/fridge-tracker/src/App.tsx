@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProductsProvider } from "@/context/products-context";
+import { ShoppingListProvider } from "@/context/shopping-list-context";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
 import NotFound from "@/pages/not-found";
 import FridgePage from "@/pages/fridge";
@@ -31,13 +32,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ProductsProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <UndoRedoBar />
-          <Toaster position="top-center" />
-        </ProductsProvider>
+        <ShoppingListProvider>
+          <ProductsProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <UndoRedoBar />
+            <Toaster position="top-center" />
+          </ProductsProvider>
+        </ShoppingListProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

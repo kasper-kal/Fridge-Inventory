@@ -2,6 +2,7 @@ import { useProducts } from "@/context/products-context";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
+import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
 import { Loader2, Snowflake } from "lucide-react";
 
 export default function FreezerPage() {
@@ -10,8 +11,15 @@ export default function FreezerPage() {
   return (
     <Layout>
       <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-blue-500/5 to-transparent">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
-        <p className="text-muted-foreground mt-1 font-medium">Overzicht van je diepvries.</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
+            <p className="text-muted-foreground mt-1 font-medium">Overzicht van je diepvries.</p>
+          </div>
+          <div className="mt-2">
+            <ShoppingListDrawer />
+          </div>
+        </div>
       </div>
 
       <SummaryStrip />
