@@ -1,13 +1,15 @@
 import { useProducts } from "@/context/products-context";
+import { useHousehold } from "@/context/household-context";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
 import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
 import { HouseholdDialog } from "@/components/household-dialog";
-import { Loader2, Refrigerator } from "lucide-react";
+import { Loader2, Refrigerator, Users } from "lucide-react";
 
 export default function FridgePage() {
   const { fridgeProducts, isLoading } = useProducts();
+  const { household } = useHousehold();
 
   return (
     <Layout>
@@ -15,7 +17,16 @@ export default function FridgePage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground">Koelkast</h1>
-            <p className="text-muted-foreground mt-1 font-medium">Houd je verse producten bij.</p>
+            {household ? (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                  <Users className="w-3.5 h-3.5" />
+                  {household.name}
+                </span>
+              </div>
+            ) : (
+              <p className="text-muted-foreground mt-1 font-medium">Houd je verse producten bij.</p>
+            )}
           </div>
           <div className="mt-2 flex items-center gap-1">
             <HouseholdDialog />
