@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart, Trash2, ExternalLink, Plus, X, Check, Share2 } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, X, Check, Share2, ExternalLink } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,10 @@ export function ShoppingListDrawer() {
       navigator.clipboard.writeText(text);
       toast.success("Gekopieerd naar klembord");
     }
+  };
+
+  const handleOpenAH = () => {
+    window.open("https://www.ah.nl/", "_blank", "noopener,noreferrer");
   };
 
   const checkedCount = items.filter((i) => i.checked).length;
@@ -77,7 +81,7 @@ export function ShoppingListDrawer() {
                 {checkedCount > 0 && (
                   <button
                     onClick={clearChecked}
-                    className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground text-xs font-medium"
+                    className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground"
                     title="Afgevinkte verwijderen"
                   >
                     <Check className="w-4 h-4" />
@@ -116,7 +120,7 @@ export function ShoppingListDrawer() {
               <ShoppingCart className="w-12 h-12 text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground font-medium">Je lijst is leeg</p>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Voeg items toe of tik op 🛒 bij een product
+                Typ hierboven een product om toe te voegen
               </p>
             </div>
           ) : (
@@ -124,7 +128,7 @@ export function ShoppingListDrawer() {
               {items.filter((i) => !i.checked).map((item) => (
                 <ShoppingItemRow key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
               ))}
-              {items.filter((i) => i.checked).length > 0 && (
+              {checkedCount > 0 && (
                 <>
                   <p className="text-xs text-muted-foreground font-medium pt-2 pb-1">Al in huis</p>
                   {items.filter((i) => i.checked).map((item) => (
@@ -134,6 +138,19 @@ export function ShoppingListDrawer() {
               )}
             </>
           )}
+        </div>
+
+        {/* AH Button */}
+        <div className="px-5 pb-6 pt-3 border-t shrink-0">
+          <button
+            onClick={handleOpenAH}
+            className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl font-semibold text-white transition-all active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #0055a8 0%, #0072da 100%)" }}
+          >
+            <span className="text-lg font-black tracking-tight">AH</span>
+            <span>Voeg toe aan Albert Heijn app</span>
+            <ExternalLink className="w-4 h-4 opacity-70" />
+          </button>
         </div>
       </DrawerContent>
     </Drawer>
@@ -163,17 +180,6 @@ function ShoppingItemRow({
       <span className={`flex-1 font-medium truncate ${item.checked ? "line-through text-muted-foreground" : ""}`}>
         {item.name}
       </span>
-
-      <a
-        href={`https://www.ah.nl/zoeken?query=${encodeURIComponent(item.name)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground shrink-0"
-        title="Zoek op Albert Heijn"
-      >
-        <span className="text-[11px] font-bold text-blue-600">AH</span>
-      </a>
 
       <button
         onClick={() => onRemove(item.id)}

@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { LocalProduct, useProducts } from "@/context/products-context";
-import { useShoppingList } from "@/context/shopping-list-context";
-import { Trash2, Check, X, Plus, Minus, ArrowLeftRight, ShoppingCart } from "lucide-react";
+import { Trash2, Check, X, Plus, Minus, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,14 +11,6 @@ const SWIPE_REVEAL = 148;
 
 export function ProductCard({ product }: { product: LocalProduct }) {
   const { updateProduct, deleteProduct } = useProducts();
-  const { addItem, items } = useShoppingList();
-  const isOnList = items.some((i) => i.name.toLowerCase() === product.name.toLowerCase());
-
-  const handleAddToList = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    addItem(product.name);
-    toast.success(`${product.name} op boodschappenlijst`);
-  }, [addItem, product.name]);
 
   const [isEditing, setIsEditing]       = useState(false);
   const [editName, setEditName]         = useState(product.name);
@@ -204,19 +195,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
           <h3 className="font-semibold text-lg text-card-foreground truncate">{product.name}</h3>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">{product.unit}</p>
         </div>
-
-        {/* Add to shopping list */}
-        <button
-          onClick={handleAddToList}
-          className={`p-2 rounded-full transition-all shrink-0 active:scale-90 ${
-            isOnList
-              ? "text-primary"
-              : "text-muted-foreground hover:text-primary hover:bg-secondary"
-          }`}
-          title="Voeg toe aan boodschappenlijst"
-        >
-          <ShoppingCart className="w-4 h-4" />
-        </button>
 
         {/* +/– quantity control */}
         <div className="flex items-center gap-1 pr-3 py-4 shrink-0">
