@@ -3,32 +3,31 @@ import { db } from "@workspace/db";
 import { householdsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
-import { z } from "zod/v4";
-
 const router = Router();
 
 function hashPin(pin: string) {
   return createHash("sha256").update(pin.trim()).digest("hex");
 }
 
-const Body = z.object({
-  name: z.string().min(1).max(64),
-  pin: z.string().min(1).max(32),
-});
+function parseBody(body: unknown): { name: string; pin: string } | null {
+  if (!body || typeof body !== "object") return null;
+  const { name, pin } = body as Record<string, unknown>;
+  if (typeof name !== "string" || !name.trim()) return null;
+  if (typeof pin !== "string" || !pin.trim()) return null;
+  if (name.length > 64 || pin.length > 32) return null;
+  return { name: name.trim(), pin: pin.trim() };
+}
 
 // POST /households — create
 router.post("/", async (req, res) => {
   try {
-    const body = Body.safeParse(req.body);
-    if (!body.success) {
-      res.status(400).json({ error: "Ongeldige invoer" });
-      return;
-    }
+    const body = parseBody(req.body);
+    if (!body) { res.status(400).json({ error: "Ongeldige invoer" }); return; }
 
     const existing = await db
       .select()
       .from(householdsTable)
-      .where(eq(householdsTable.name, body.data.name.trim()))
+      .where(eq(householdsTable.name, body.name))
       .limit(1);
 
     if (existing.length > 0) {
@@ -38,7 +37,7 @@ router.post("/", async (req, res) => {
 
     const [household] = await db
       .insert(householdsTable)
-      .values({ name: body.data.name.trim(), pinHash: hashPin(body.data.pin) })
+      .values({ name: body.name, pinHash: hashPin(body.pin) })
       .returning();
 
     res.status(201).json({ id: household.id, name: household.name });
@@ -50,21 +49,13 @@ router.post("/", async (req, res) => {
 // POST /households/join — join by name + pin
 router.post("/join", async (req, res) => {
   try {
-    const body = Body.safeParse(req.body);
-    if (!body.success) {
-      res.status(400).json({ error: "Ongeldige invoer" });
-      return;
-    }
+    const body = parseBody(req.body);
+    if (!body) { res.status(400).json({ error: "Ongeldige invoer" }); return; }
 
     const [household] = await db
       .select()
       .from(householdsTable)
-      .where(
-        and(
-          eq(householdsTable.name, body.data.name.trim()),
-          eq(householdsTable.pinHash, hashPin(body.data.pin))
-        )
-      )
+      .where(and(eq(householdsTable.name, body.name), eq(householdsTable.pinHash, hashPin(body.pin))))
       .limit(1);
 
     if (!household) {

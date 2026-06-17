@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Plus, LogIn, LogOut, Home } from "lucide-react";
+import { Users, Plus, LogIn, LogOut, Home, Eye, EyeOff } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export function HouseholdDialog() {
   const [tab, setTab] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const reset = () => { setName(""); setPin(""); };
@@ -158,14 +159,25 @@ export function HouseholdDialog() {
                   <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
                     Pincode
                   </label>
-                  <Input
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && (tab === "create" ? handleCreate() : handleJoin())}
-                    placeholder="bijv. 1234"
-                    type="password"
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (tab === "create" ? handleCreate() : handleJoin())}
+                      placeholder="bijv. 1234"
+                      type={showPin ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPin((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
