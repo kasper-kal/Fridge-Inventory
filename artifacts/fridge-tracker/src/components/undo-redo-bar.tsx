@@ -16,7 +16,7 @@ export function UndoRedoBar() {
   };
 
   return (
-    <div className="fixed bottom-[96px] left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 bg-card/95 backdrop-blur-md border border-border rounded-full px-3 py-1.5 shadow-lg">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 bg-card/95 backdrop-blur-md border border-border rounded-full px-3 py-1.5 shadow-lg">
       <button
         onClick={handleUndo}
         disabled={!canUndo}
