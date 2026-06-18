@@ -113,7 +113,7 @@ function MenuView({
         onClick={onManual}
         className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
       >
-        <div className="h-12 w-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
           <PenLine className="h-6 w-6" />
         </div>
         <div className="flex-1 text-left">
@@ -321,9 +321,9 @@ function ManualAddFlow({
               <RadioGroupItem value="freezer" id="freezer-m" className="peer sr-only" />
               <Label
                 htmlFor="freezer-m"
-                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
+                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <Snowflake className="w-5 h-5 text-blue-500" />
+                <Snowflake className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-sm text-foreground mt-1">Vriezer</span>
               </Label>
             </div>
@@ -331,9 +331,9 @@ function ManualAddFlow({
               <RadioGroupItem value="pantry" id="pantry-m" className="peer sr-only" />
               <Label
                 htmlFor="pantry-m"
-                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-amber-500 peer-data-[state=checked]:bg-amber-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
+                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <Package className="w-5 h-5 text-amber-500" />
+                <Package className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-sm text-foreground mt-1">Voorraad</span>
               </Label>
             </div>
@@ -536,8 +536,8 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                           className={`p-1.5 rounded-md transition-colors ${
                             item.location === loc
                               ? loc === "fridge" ? "bg-primary text-primary-foreground"
-                                : loc === "freezer" ? "bg-blue-500 text-white"
-                                : "bg-amber-500 text-white"
+                                : loc === "freezer" ? "bg-primary text-primary-foreground"
+                                : "bg-primary text-primary-foreground"
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >

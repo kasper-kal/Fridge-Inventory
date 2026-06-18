@@ -13,7 +13,7 @@ export default function FreezerPage() {
 
   return (
     <Layout>
-      <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-blue-500/5 to-transparent">
+      <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
@@ -40,7 +40,7 @@ export default function FreezerPage() {
       <div className="px-6 pb-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
           <ProductList
@@ -48,7 +48,7 @@ export default function FreezerPage() {
             emptyIcon={<Snowflake className="w-10 h-10 text-muted-foreground" />}
             emptyTitle="Je vriezer is leeg"
             emptyMessage="Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen."
-            accentColor="text-blue-500"
+            accentColor="text-primary"
           />
         )}
       </div>

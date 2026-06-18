@@ -21,7 +21,7 @@ export function BottomNav() {
         </Link>
 
         <Link href="/pantry">
-          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${location === '/pantry' ? 'text-amber-500 scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${location === '/pantry' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
             <Package className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Voorraad</span>
           </div>

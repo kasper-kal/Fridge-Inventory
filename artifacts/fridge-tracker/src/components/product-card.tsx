@@ -191,7 +191,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
         <button
           onClick={handleMove}
           disabled={pending}
-          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-blue-500 text-white text-xs font-semibold active:brightness-90 transition-all"
+          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-primary text-primary-foreground text-xs font-semibold active:brightness-90 transition-all"
         >
           <ArrowLeftRight className="w-5 h-5" />
           {moveLabel}
