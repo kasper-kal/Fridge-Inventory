@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload, Barcode } from "lucide-react";
+import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload, Barcode, Refrigerator, Snowflake, Package } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -313,7 +313,7 @@ function ManualAddFlow({
                 htmlFor="fridge-m"
                 className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <span className="text-lg">🧊</span>
+                <Refrigerator className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-sm text-foreground mt-1">Koelkast</span>
               </Label>
             </div>
@@ -323,7 +323,7 @@ function ManualAddFlow({
                 htmlFor="freezer-m"
                 className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <span className="text-lg">❄️</span>
+                <Snowflake className="w-5 h-5 text-blue-500" />
                 <span className="font-semibold text-sm text-foreground mt-1">Vriezer</span>
               </Label>
             </div>
@@ -333,7 +333,7 @@ function ManualAddFlow({
                 htmlFor="pantry-m"
                 className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-amber-500 peer-data-[state=checked]:bg-amber-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <span className="text-lg">📦</span>
+                <Package className="w-5 h-5 text-amber-500" />
                 <span className="font-semibold text-sm text-foreground mt-1">Voorraad</span>
               </Label>
             </div>
@@ -533,7 +533,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                           key={loc}
                           type="button"
                           onClick={() => updateItem(i, "location", loc)}
-                          className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                          className={`p-1.5 rounded-md transition-colors ${
                             item.location === loc
                               ? loc === "fridge" ? "bg-primary text-primary-foreground"
                                 : loc === "freezer" ? "bg-blue-500 text-white"
@@ -541,7 +541,11 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
-                          {loc === "fridge" ? "🧊" : loc === "freezer" ? "❄️" : "📦"}
+                          {loc === "fridge"
+                            ? <Refrigerator className="w-4 h-4" />
+                            : loc === "freezer"
+                            ? <Snowflake className="w-4 h-4" />
+                            : <Package className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
