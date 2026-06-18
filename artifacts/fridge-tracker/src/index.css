@@ -153,3 +153,8 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@keyframes scanline {
+  0%, 100% { transform: translateY(-80px); }
+  50%       { transform: translateY(80px); }
+}
