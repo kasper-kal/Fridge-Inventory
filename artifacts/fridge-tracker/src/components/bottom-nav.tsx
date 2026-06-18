@@ -8,7 +8,7 @@ export function BottomNav() {
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
       {/* Floating + above center */}
-      <div className="absolute left-1/2 -translate-x-1/2 -top-7">
+      <div className="absolute left-1/2 -translate-x-1/2 -top-12">
         <AddModal />
       </div>
 
