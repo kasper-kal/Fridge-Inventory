@@ -9,6 +9,7 @@ import { UndoRedoBar } from "@/components/undo-redo-bar";
 import NotFound from "@/pages/not-found";
 import FridgePage from "@/pages/fridge";
 import FreezerPage from "@/pages/freezer";
+import PantryPage from "@/pages/pantry";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={FridgePage} />
       <Route path="/freezer" component={FreezerPage} />
+      <Route path="/pantry" component={PantryPage} />
       <Route component={NotFound} />
     </Switch>
   );

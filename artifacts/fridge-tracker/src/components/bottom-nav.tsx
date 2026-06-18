@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Snowflake, Refrigerator } from "lucide-react";
+import { Snowflake, Refrigerator, Package } from "lucide-react";
 import { AddModal } from "./add-modal";
 
 export function BottomNav() {
@@ -7,12 +7,18 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
-      {/* Main nav */}
-      <div className="flex items-center justify-around h-20 px-6">
+      <div className="flex items-center justify-around h-20 px-2">
         <Link href="/">
           <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/' ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
             <Refrigerator className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Koelkast</span>
+          </div>
+        </Link>
+
+        <Link href="/pantry">
+          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${location === '/pantry' ? 'text-amber-500 scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+            <Package className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Voorraad</span>
           </div>
         </Link>
 

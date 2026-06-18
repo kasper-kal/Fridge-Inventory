@@ -10,6 +10,30 @@ import { UnitSelect } from "@/components/unit-select";
 const SWIPE_THRESHOLD = 60;
 const SWIPE_REVEAL = 222;
 
+function formatDate(iso: string) {
+  try {
+    return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short" }).format(new Date(iso));
+  } catch { return ""; }
+}
+
+function nextLocation(current: LocalProduct["storageLocation"]): LocalProduct["storageLocation"] {
+  if (current === "fridge") return "freezer";
+  if (current === "freezer") return "pantry";
+  return "fridge";
+}
+
+function nextLocationLabel(current: LocalProduct["storageLocation"]): string {
+  if (current === "fridge") return "Vriezer";
+  if (current === "freezer") return "Voorraad";
+  return "Koelkast";
+}
+
+function nextLocationToast(dest: LocalProduct["storageLocation"]): string {
+  if (dest === "fridge") return "koelkast";
+  if (dest === "freezer") return "vriezer";
+  return "voorraad";
+}
+
 export function ProductCard({ product }: { product: LocalProduct }) {
   const { updateProduct, deleteProduct } = useProducts();
   const { addItem } = useShoppingList();
@@ -34,7 +58,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     closeSwipe();
   }, [addItem, product.name]);
 
-  // ── quantity +/– ──────────────────────────────────────────────
   function stepForUnit(unit: string): number {
     switch (unit.toLowerCase().trim()) {
       case "g":   return 100;
@@ -51,24 +74,20 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     updateProduct(product.id, { quantity: next });
   }, [product.id, product.quantity, product.unit, updateProduct]);
 
-  // ── move to other location ─────────────────────────────────────
   const handleMove = useCallback(async () => {
-    const dest = product.storageLocation === "fridge" ? "freezer" : "fridge";
-    const label = dest === "fridge" ? "koelkast" : "vriezer";
+    const dest = nextLocation(product.storageLocation);
     setPending(true);
     await updateProduct(product.id, { storageLocation: dest });
     setPending(false);
-    toast.success(`Verplaatst naar ${label}`);
+    toast.success(`Verplaatst naar ${nextLocationToast(dest)}`);
     closeSwipe();
   }, [product.id, product.storageLocation, updateProduct]);
 
-  // ── delete ─────────────────────────────────────────────────────
   const handleDelete = useCallback(async () => {
     await deleteProduct(product.id);
     toast.success("Product verwijderd");
   }, [product.id, deleteProduct]);
 
-  // ── save edit ──────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     setPending(true);
     await updateProduct(product.id, {
@@ -81,7 +100,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     toast.success("Product bijgewerkt");
   }, [product.id, editName, editQuantity, editUnit, updateProduct]);
 
-  // ── swipe gesture ──────────────────────────────────────────────
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -123,7 +141,8 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     dragging.current = false;
   };
 
-  // ── edit mode ──────────────────────────────────────────────────
+  const dateLabel = product.createdAt ? formatDate(product.createdAt) : "";
+
   if (isEditing) {
     return (
       <div className="bg-card rounded-2xl p-4 border shadow-sm flex flex-col gap-3">
@@ -155,7 +174,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     );
   }
 
-  const destLabel = product.storageLocation === "fridge" ? "Vriezer" : "Koelkast";
+  const moveLabel = nextLocationLabel(product.storageLocation);
 
   return (
     <div className="relative rounded-2xl overflow-hidden select-none">
@@ -175,7 +194,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
           className="w-[74px] flex flex-col items-center justify-center gap-1 bg-blue-500 text-white text-xs font-semibold active:brightness-90 transition-all"
         >
           <ArrowLeftRight className="w-5 h-5" />
-          {destLabel}
+          {moveLabel}
         </button>
         <button
           onClick={handleDelete}
@@ -202,17 +221,22 @@ export function ProductCard({ product }: { product: LocalProduct }) {
           <div className="absolute inset-0 z-10 rounded-2xl" onClick={closeSwipe} />
         )}
 
-        {/* Name — tap to edit */}
+        {/* Name + date — tap to edit */}
         <div
-          className="flex-1 min-w-0 py-4 pl-4 pr-1 cursor-pointer active:opacity-70 transition-opacity"
+          className="flex-1 min-w-0 py-3.5 pl-4 pr-1 cursor-pointer active:opacity-70 transition-opacity"
           onClick={() => { if (!swiped) setIsEditing(true); else closeSwipe(); }}
         >
           <h3 className="font-semibold text-lg text-card-foreground truncate">{product.name}</h3>
-          <p className="text-sm font-medium text-muted-foreground mt-0.5">{product.unit}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-sm font-medium text-muted-foreground">{product.unit}</p>
+            {dateLabel && (
+              <p className="text-xs text-muted-foreground/50">· {dateLabel}</p>
+            )}
+          </div>
         </div>
 
         {/* +/– quantity control */}
-        <div className="flex items-center gap-1 pr-3 py-4 shrink-0">
+        <div className="flex items-center gap-1 pr-3 py-3.5 shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); if (swiped) { closeSwipe(); return; } adjustQuantity(-1); }}
             disabled={product.quantity <= 0}

@@ -5,6 +5,7 @@ const STORAGE_KEY = "fridge_tracker_household";
 export interface Household {
   id: number;
   name: string;
+  pin?: string;
 }
 
 interface HouseholdContextValue {
@@ -19,9 +20,7 @@ function readStorage(): Household | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export function HouseholdProvider({ children }: { children: ReactNode }) {
@@ -29,11 +28,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
 
   const setHousehold = useCallback((h: Household | null) => {
     setHouseholdState(h);
-    if (h) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    if (h) localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
+    else localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const leave = useCallback(() => setHousehold(null), [setHousehold]);

@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload, Barcode } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useParseReceipt } from "@workspace/api-client-react";
 import { useProducts } from "@/context/products-context";
 import { UnitSelect } from "@/components/unit-select";
+import { CameraScanner } from "@/components/camera-scanner";
 import { toast } from "sonner";
 import Tesseract from "tesseract.js";
 
+type View = "menu" | "manual" | "scan" | "barcode";
+type StorageLocation = "fridge" | "freezer" | "pantry";
+
 export function AddModal() {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"menu" | "manual" | "scan">("menu");
+  const [view, setView] = useState<View>("menu");
+  const [prefillName, setPrefillName] = useState("");
+  const [prefillLocation, setPrefillLocation] = useState<StorageLocation>("fridge");
 
   const resetAndClose = () => {
     setOpen(false);
-    setTimeout(() => setView("menu"), 300);
+    setTimeout(() => { setView("menu"); setPrefillName(""); setPrefillLocation("fridge"); }, 300);
   };
+
+  const goToManual = useCallback((name = "", loc: StorageLocation = "fridge") => {
+    setPrefillName(name);
+    setPrefillLocation(loc);
+    setView("manual");
+  }, []);
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
@@ -35,55 +47,194 @@ export function AddModal() {
         <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
 
         {view === "menu" && (
-          <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold text-card-foreground mb-4">Toevoegen aan voorraad</h2>
-
-            <button
-              onClick={() => setView("scan")}
-              className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <Camera className="h-6 w-6" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-semibold text-lg text-card-foreground">Bon scannen</div>
-                <div className="text-sm text-muted-foreground">Items automatisch detecteren met AI</div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-
-            <button
-              onClick={() => setView("manual")}
-              className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
-            >
-              <div className="h-12 w-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <PenLine className="h-6 w-6" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-semibold text-lg text-card-foreground">Handmatig toevoegen</div>
-                <div className="text-sm text-muted-foreground">Vul zelf de details in</div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          </div>
+          <MenuView onScan={() => setView("scan")} onManual={() => goToManual()} onBarcode={() => setView("barcode")} />
         )}
-
         {view === "manual" && (
-          <ManualAddFlow onClose={resetAndClose} onBack={() => setView("menu")} />
+          <ManualAddFlow
+            onClose={resetAndClose}
+            onBack={() => setView("menu")}
+            prefillName={prefillName}
+            prefillLocation={prefillLocation}
+          />
         )}
         {view === "scan" && (
           <ScanReceiptFlow onClose={resetAndClose} onBack={() => setView("menu")} />
+        )}
+        {view === "barcode" && (
+          <BarcodeFlow onClose={resetAndClose} onBack={() => setView("menu")} onFound={goToManual} />
         )}
       </DrawerContent>
     </Drawer>
   );
 }
 
-function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () => void }) {
-  const [name, setName] = useState("");
+function MenuView({
+  onScan,
+  onManual,
+  onBarcode,
+}: {
+  onScan: () => void;
+  onManual: () => void;
+  onBarcode: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <h2 className="text-2xl font-bold text-card-foreground mb-4">Toevoegen aan voorraad</h2>
+
+      <button
+        onClick={onScan}
+        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+      >
+        <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+          <Camera className="h-6 w-6" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="font-semibold text-lg text-card-foreground">Bon scannen</div>
+          <div className="text-sm text-muted-foreground">Items automatisch detecteren met AI</div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </button>
+
+      <button
+        onClick={onBarcode}
+        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+      >
+        <div className="h-12 w-12 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+          <Barcode className="h-6 w-6" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="font-semibold text-lg text-card-foreground">Barcode scannen</div>
+          <div className="text-sm text-muted-foreground">Scan een product via de camera</div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </button>
+
+      <button
+        onClick={onManual}
+        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+      >
+        <div className="h-12 w-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+          <PenLine className="h-6 w-6" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="font-semibold text-lg text-card-foreground">Handmatig toevoegen</div>
+          <div className="text-sm text-muted-foreground">Vul zelf de details in</div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </button>
+    </div>
+  );
+}
+
+function BarcodeFlow({
+  onClose,
+  onBack,
+  onFound,
+}: {
+  onClose: () => void;
+  onBack: () => void;
+  onFound: (name: string, location: StorageLocation) => void;
+}) {
+  const [scanning, setScanning] = useState(true);
+  const [looking, setLooking] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [barcode, setBarcode] = useState("");
+
+  const handleBarcode = useCallback(async (code: string) => {
+    setScanning(false);
+    setLooking(true);
+    setBarcode(code);
+
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`);
+      const data = await res.json();
+      const productName: string | undefined =
+        data?.product?.product_name_nl ||
+        data?.product?.product_name ||
+        data?.product?.generic_name_nl ||
+        data?.product?.generic_name;
+
+      if (productName) {
+        toast.success(`Product gevonden: ${productName}`);
+        onFound(productName, "fridge");
+      } else {
+        setNotFound(true);
+      }
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLooking(false);
+    }
+  }, [onFound]);
+
+  return (
+    <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <h2 className="text-2xl font-bold text-card-foreground">Barcode scannen</h2>
+        <Button variant="ghost" size="icon" onClick={onBack} className="text-muted-foreground hover:text-foreground">
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+        {scanning && (
+          <CameraScanner
+            onResult={handleBarcode}
+            label="Richt op een EAN/UPC barcode op de verpakking"
+          />
+        )}
+
+        {looking && (
+          <div className="flex flex-col items-center gap-4 py-8">
+            <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-lg">Product opzoeken…</p>
+              <p className="text-sm text-muted-foreground font-mono mt-1">{barcode}</p>
+            </div>
+          </div>
+        )}
+
+        {notFound && (
+          <div className="flex flex-col items-center gap-4 py-8 text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+              <Barcode className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold text-lg">Product niet gevonden</p>
+              <p className="text-sm text-muted-foreground">Barcode: {barcode}</p>
+            </div>
+            <div className="flex gap-3 w-full max-w-xs">
+              <Button variant="outline" className="flex-1" onClick={() => { setNotFound(false); setScanning(true); }}>
+                Opnieuw scannen
+              </Button>
+              <Button className="flex-1" onClick={() => onFound("", "fridge")}>
+                Handmatig
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ManualAddFlow({
+  onClose,
+  onBack,
+  prefillName = "",
+  prefillLocation = "fridge",
+}: {
+  onClose: () => void;
+  onBack: () => void;
+  prefillName?: string;
+  prefillLocation?: StorageLocation;
+}) {
+  const [name, setName] = useState(prefillName);
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
-  const [location, setLocation] = useState<"fridge" | "freezer">("fridge");
+  const [location, setLocation] = useState<StorageLocation>(prefillLocation);
   const [saving, setSaving] = useState(false);
 
   const { createProduct } = useProducts();
@@ -110,22 +261,14 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
     >
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-card-foreground">Handmatig toevoegen</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          type="button"
-          className="text-muted-foreground hover:text-foreground"
-        >
+        <Button variant="ghost" size="icon" onClick={onBack} type="button" className="text-muted-foreground hover:text-foreground">
           <X className="h-5 w-5" />
         </Button>
       </div>
 
       <div className="space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">
-            Productnaam
-          </Label>
+          <Label htmlFor="name" className="text-sm font-medium">Productnaam</Label>
           <Input
             id="name"
             value={name}
@@ -138,9 +281,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
 
         <div className="flex gap-4">
           <div className="space-y-2 flex-1">
-            <Label htmlFor="qty" className="text-sm font-medium">
-              Hoeveelheid
-            </Label>
+            <Label htmlFor="qty" className="text-sm font-medium">Hoeveelheid</Label>
             <Input
               id="qty"
               type="number"
@@ -162,25 +303,37 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
           <Label className="text-sm font-medium">Bewaren in</Label>
           <RadioGroup
             value={location}
-            onValueChange={(v: "fridge" | "freezer") => setLocation(v)}
-            className="flex gap-4"
+            onValueChange={(v) => setLocation(v as StorageLocation)}
+            className="grid grid-cols-3 gap-3"
           >
-            <div className="flex-1">
-              <RadioGroupItem value="fridge" id="fridge-manual" className="peer sr-only" />
+            <div>
+              <RadioGroupItem value="fridge" id="fridge-m" className="peer sr-only" />
               <Label
-                htmlFor="fridge-manual"
-                className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50"
+                htmlFor="fridge-m"
+                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <div className="font-semibold text-lg text-foreground">Koelkast</div>
+                <span className="text-lg">🧊</span>
+                <span className="font-semibold text-sm text-foreground mt-1">Koelkast</span>
               </Label>
             </div>
-            <div className="flex-1">
-              <RadioGroupItem value="freezer" id="freezer-manual" className="peer sr-only" />
+            <div>
+              <RadioGroupItem value="freezer" id="freezer-m" className="peer sr-only" />
               <Label
-                htmlFor="freezer-manual"
-                className="flex flex-col items-center justify-center p-4 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50"
+                htmlFor="freezer-m"
+                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
               >
-                <div className="font-semibold text-lg text-foreground">Vriezer</div>
+                <span className="text-lg">❄️</span>
+                <span className="font-semibold text-sm text-foreground mt-1">Vriezer</span>
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="pantry" id="pantry-m" className="peer sr-only" />
+              <Label
+                htmlFor="pantry-m"
+                className="flex flex-col items-center justify-center p-3 border-2 border-transparent bg-secondary/30 rounded-2xl peer-data-[state=checked]:border-amber-500 peer-data-[state=checked]:bg-amber-500/5 cursor-pointer transition-all hover:bg-secondary/50 text-center"
+              >
+                <span className="text-lg">📦</span>
+                <span className="font-semibold text-sm text-foreground mt-1">Voorraad</span>
               </Label>
             </div>
           </RadioGroup>
@@ -193,11 +346,7 @@ function ManualAddFlow({ onClose, onBack }: { onClose: () => void; onBack: () =>
           disabled={saving}
           className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
         >
-          {saving ? (
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          ) : (
-            <Save className="w-5 h-5 mr-2" />
-          )}
+          {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
           Item opslaan
         </Button>
       </div>
@@ -209,9 +358,8 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
   const [step, setStep] = useState<"upload" | "ocr" | "api" | "confirm">("upload");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [parsedItems, setParsedItems] = useState<
-    { name: string; quantity: number; unit: string; location: "fridge" | "freezer" }[]
+    { name: string; quantity: number; unit: string; location: "fridge" | "freezer" | "pantry" }[]
   >([]);
-
   const [saving, setSaving] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -225,9 +373,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
     try {
       const result = await Tesseract.recognize(file, "eng", {
         logger: (m) => {
-          if (m.status === "recognizing text") {
-            setOcrProgress(Math.round(m.progress * 100));
-          }
+          if (m.status === "recognizing text") setOcrProgress(Math.round(m.progress * 100));
         },
       });
 
@@ -240,15 +386,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
 
       setStep("api");
       const items = await parseMutation.mutateAsync({ data: { text: ocrText } });
-
-      setParsedItems(
-        items.map((i) => ({
-          name: i.name,
-          quantity: i.quantity ?? 1,
-          unit: i.unit ?? "st",
-          location: "fridge" as const,
-        }))
-      );
+      setParsedItems(items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity ?? 1,
+        unit: i.unit ?? "st",
+        location: "fridge" as const,
+      })));
       setStep("confirm");
     } catch (err) {
       console.error(err);
@@ -273,12 +416,7 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
     if (parsedItems.length === 0) return onClose();
     setSaving(true);
     for (const item of parsedItems) {
-      await createProduct({
-        name: item.name,
-        quantity: item.quantity,
-        unit: item.unit,
-        storageLocation: item.location,
-      });
+      await createProduct({ name: item.name, quantity: item.quantity, unit: item.unit, storageLocation: item.location });
     }
     setSaving(false);
     toast.success(`${parsedItems.length} item${parsedItems.length !== 1 ? "s" : ""} opgeslagen`);
@@ -320,43 +458,17 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
             <div className="text-center space-y-1">
               <p className="font-semibold text-card-foreground">Voeg een bonafbeelding toe</p>
               <p className="text-sm text-muted-foreground max-w-[260px]">
-                Tekst wordt lokaal uitgelezen op je apparaat. Alleen de tekst wordt naar AI gestuurd — nooit de afbeelding.
+                Tekst wordt lokaal uitgelezen. Alleen de tekst wordt naar AI gestuurd — nooit de afbeelding.
               </p>
             </div>
-
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              ref={cameraInputRef}
-              onChange={handleCameraChange}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-            />
-
+            <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraInputRef} onChange={handleCameraChange} />
+            <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
             <div className="flex flex-col gap-3 w-full max-w-xs">
-              <Button
-                size="lg"
-                className="w-full h-14 rounded-2xl text-base font-bold"
-                onClick={() => cameraInputRef.current?.click()}
-              >
-                <Camera className="w-5 h-5 mr-2" />
-                Foto nemen
+              <Button size="lg" className="w-full h-14 rounded-2xl text-base font-bold" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="w-5 h-5 mr-2" /> Foto nemen
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full h-14 rounded-2xl text-base font-bold"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Uploaden van apparaat
+              <Button size="lg" variant="outline" className="w-full h-14 rounded-2xl text-base font-bold" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-5 h-5 mr-2" /> Uploaden van apparaat
               </Button>
             </div>
           </div>
@@ -366,23 +478,12 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
           <div className="flex flex-col items-center justify-center h-full space-y-8 py-12">
             <div className="relative w-24 h-24 flex items-center justify-center">
               <div className="absolute inset-0 border-4 border-secondary rounded-full" />
-              <div
-                className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"
-                style={{ animationDuration: "1.5s" }}
-              />
-              <span className="text-lg font-bold text-primary">
-                {step === "ocr" ? `${ocrProgress}%` : "AI"}
-              </span>
+              <div className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin" style={{ animationDuration: "1.5s" }} />
+              <span className="text-lg font-bold text-primary">{step === "ocr" ? `${ocrProgress}%` : "AI"}</span>
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold">
-                {step === "ocr" ? "Tekst lezen..." : "Items identificeren..."}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {step === "ocr"
-                  ? "Bon lokaal scannen op je apparaat"
-                  : "Bontekst naar AI sturen"}
-              </p>
+              <h3 className="text-xl font-bold">{step === "ocr" ? "Tekst lezen..." : "Items identificeren..."}</h3>
+              <p className="text-sm text-muted-foreground">{step === "ocr" ? "Bon lokaal scannen op je apparaat" : "Bontekst naar AI sturen"}</p>
             </div>
           </div>
         )}
@@ -392,20 +493,14 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
             <p className="font-medium text-muted-foreground mb-2">
               Bekijk {parsedItems.length} gedetecteerd{parsedItems.length !== 1 ? "e items" : " item"}
             </p>
-
             {parsedItems.length === 0 ? (
               <div className="text-center py-12 space-y-3">
                 <p className="text-muted-foreground">Er zijn geen items gedetecteerd.</p>
-                <Button variant="outline" onClick={() => setStep("upload")}>
-                  Opnieuw proberen
-                </Button>
+                <Button variant="outline" onClick={() => setStep("upload")}>Opnieuw proberen</Button>
               </div>
             ) : (
               parsedItems.map((item, i) => (
-                <div
-                  key={i}
-                  className="bg-secondary/20 border border-secondary p-4 rounded-2xl space-y-3 relative"
-                >
+                <div key={i} className="bg-secondary/20 border border-secondary p-4 rounded-2xl space-y-3 relative">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -414,7 +509,6 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
-
                   <div className="pr-10">
                     <Input
                       value={item.name}
@@ -422,47 +516,31 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
                       className="font-semibold text-base border-transparent bg-transparent hover:bg-secondary/40 focus:bg-background px-2 -ml-2 transition-colors"
                     />
                   </div>
-
                   <div className="flex gap-2 items-center">
                     <Input
-                      type="number"
-                      min="0"
-                      step="any"
+                      type="number" min="0" step="any"
                       value={item.quantity}
-                      onChange={(e) =>
-                        updateItem(i, "quantity", parseFloat(e.target.value) || 0)
-                      }
+                      onChange={(e) => updateItem(i, "quantity", parseFloat(e.target.value) || 0)}
                       className="w-20 bg-background"
                     />
-                    <UnitSelect
-                      value={item.unit || "st"}
-                      onChange={(v) => updateItem(i, "unit", v)}
-                      size="sm"
-                      className="w-28"
-                    />
-                    <div className="flex bg-background rounded-lg border p-1 ml-auto shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => updateItem(i, "location", "fridge")}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                          item.location === "fridge"
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Koelkast
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateItem(i, "location", "freezer")}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                          item.location === "freezer"
-                            ? "bg-blue-500 text-white"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Vriezer
-                      </button>
+                    <UnitSelect value={item.unit || "st"} onChange={(v) => updateItem(i, "unit", v)} size="sm" className="w-28" />
+                    <div className="flex bg-background rounded-lg border p-1 ml-auto shrink-0 gap-0.5">
+                      {(["fridge", "freezer", "pantry"] as const).map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => updateItem(i, "location", loc)}
+                          className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                            item.location === loc
+                              ? loc === "fridge" ? "bg-primary text-primary-foreground"
+                                : loc === "freezer" ? "bg-blue-500 text-white"
+                                : "bg-amber-500 text-white"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {loc === "fridge" ? "🧊" : loc === "freezer" ? "❄️" : "📦"}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -474,16 +552,8 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
 
       {step === "confirm" && parsedItems.length > 0 && (
         <div className="pt-4 mt-auto shrink-0 bg-card border-t -mx-6 px-6 pb-2">
-          <Button
-            className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg"
-            onClick={handleSaveAll}
-            disabled={saving}
-          >
-            {saving ? (
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            ) : (
-              <Save className="w-5 h-5 mr-2" />
-            )}
+          <Button className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg" onClick={handleSaveAll} disabled={saving}>
+            {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
             Alle {parsedItems.length} item{parsedItems.length !== 1 ? "s" : ""} opslaan
           </Button>
         </div>

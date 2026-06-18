@@ -13,7 +13,7 @@ export interface LocalProduct {
   name: string;
   quantity: number;
   unit: string;
-  storageLocation: "fridge" | "freezer";
+  storageLocation: "fridge" | "freezer" | "pantry";
   createdAt: string;
 }
 
@@ -21,14 +21,14 @@ interface CreateInput {
   name: string;
   quantity: number;
   unit: string;
-  storageLocation: "fridge" | "freezer";
+  storageLocation: "fridge" | "freezer" | "pantry";
 }
 
 interface UpdateInput {
   name?: string;
   quantity?: number;
   unit?: string;
-  storageLocation?: "fridge" | "freezer";
+  storageLocation?: "fridge" | "freezer" | "pantry";
 }
 
 interface ProductsContextValue {
@@ -36,7 +36,8 @@ interface ProductsContextValue {
   isLoading: boolean;
   fridgeProducts: LocalProduct[];
   freezerProducts: LocalProduct[];
-  summary: { fridge: number; freezer: number; total: number };
+  pantryProducts: LocalProduct[];
+  summary: { fridge: number; freezer: number; pantry: number; total: number };
   canUndo: boolean;
   canRedo: boolean;
   undo: () => void;
@@ -53,9 +54,7 @@ function readStorage(key: string): LocalProduct[] {
     const raw = localStorage.getItem(key);
     if (!raw) return [];
     return JSON.parse(raw) as LocalProduct[];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 function writeStorage(key: string, products: LocalProduct[]) {
@@ -87,7 +86,9 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProductsRaw] = useState<LocalProduct[]>(() => readStorage(key));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Reset products when household changes
+  const past   = useRef<LocalProduct[][]>([]);
+  const future = useRef<LocalProduct[][]>([]);
+
   const prevHouseholdId = useRef(householdId);
   useEffect(() => {
     if (prevHouseholdId.current !== householdId) {
@@ -98,10 +99,6 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
     }
   }, [householdId]);
-
-  // ── undo / redo history ──────────────────────────────────────
-  const past   = useRef<LocalProduct[][]>([]);
-  const future = useRef<LocalProduct[][]>([]);
 
   const setProducts = useCallback((
     updater: LocalProduct[] | ((prev: LocalProduct[]) => LocalProduct[]),
@@ -147,7 +144,6 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const canUndo = past.current.length > 0;
   const canRedo = future.current.length > 0;
 
-  // ── initial sync + polling ────────────────────────────────────
   const syncFromServer = useCallback((isInitial = false) => {
     apiFetch("/api/products", householdId)
       .then((data: LocalProduct[]) => {
@@ -172,7 +168,6 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [syncFromServer]);
 
-  // ── CRUD ─────────────────────────────────────────────────────
   const createProduct = useCallback(async (data: CreateInput) => {
     const tempId = -Date.now();
     const tempProduct: LocalProduct = { id: tempId, ...data, createdAt: new Date().toISOString() };
@@ -204,11 +199,17 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   const fridgeProducts  = products.filter((p) => p.storageLocation === "fridge");
   const freezerProducts = products.filter((p) => p.storageLocation === "freezer");
-  const summary = { fridge: fridgeProducts.length, freezer: freezerProducts.length, total: products.length };
+  const pantryProducts  = products.filter((p) => p.storageLocation === "pantry");
+  const summary = {
+    fridge: fridgeProducts.length,
+    freezer: freezerProducts.length,
+    pantry: pantryProducts.length,
+    total: products.length,
+  };
 
   return (
     <ProductsContext.Provider value={{
-      products, isLoading, fridgeProducts, freezerProducts, summary,
+      products, isLoading, fridgeProducts, freezerProducts, pantryProducts, summary,
       canUndo, canRedo, undo, redo,
       createProduct, updateProduct, deleteProduct,
     }}>
