@@ -58,7 +58,7 @@ export function HouseholdDialog() {
         body: JSON.stringify({ name: name.trim(), pin: pin.trim() }),
       });
       setHousehold({ id: data.id, name: data.name, pin: pin.trim() });
-      toast.success(`Huishouden "${data.name}" aangemaakt!`);
+      toast.success(`Huishouden "${data.name}" aangemaakt — deel de pincode met je huisgenoten`);
       reset();
       setOpen(false);
     } catch (e: any) {
@@ -77,7 +77,7 @@ export function HouseholdDialog() {
         body: JSON.stringify({ name: joinName.trim(), pin: joinPin.trim() }),
       });
       setHousehold({ id: data.id, name: data.name, pin: joinPin.trim() });
-      toast.success(`Welkom bij "${data.name}"!`);
+      toast.success(`Aangesloten bij ${data.name}`);
       reset();
       setOpen(false);
     } catch (e: any) {
@@ -101,8 +101,9 @@ export function HouseholdDialog() {
   }, []);
 
   const handleLeave = () => {
+    const naam = household?.name;
     leave();
-    toast.success("Huishouden verlaten");
+    toast.success(naam ? `${naam} verlaten` : "Huishouden verlaten");
     setOpen(false);
   };
 

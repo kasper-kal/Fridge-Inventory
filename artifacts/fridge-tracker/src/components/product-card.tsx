@@ -79,14 +79,14 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     setPending(true);
     await updateProduct(product.id, { storageLocation: dest });
     setPending(false);
-    toast.success(`Verplaatst naar ${nextLocationToast(dest)}`);
+    toast.success(`${product.name} verplaatst naar ${nextLocationToast(dest)}`);
     closeSwipe();
-  }, [product.id, product.storageLocation, updateProduct]);
+  }, [product.id, product.name, product.storageLocation, updateProduct]);
 
   const handleDelete = useCallback(async () => {
     await deleteProduct(product.id);
-    toast.success("Product verwijderd");
-  }, [product.id, deleteProduct]);
+    toast.success(`${product.name} verwijderd`);
+  }, [product.id, product.name, deleteProduct]);
 
   const handleSave = useCallback(async () => {
     setPending(true);
@@ -97,7 +97,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     });
     setPending(false);
     setIsEditing(false);
-    toast.success("Product bijgewerkt");
+    toast.success(`${editName} bijgewerkt`);
   }, [product.id, editName, editQuantity, editUnit, updateProduct]);
 
   const onTouchStart = (e: React.TouchEvent) => {

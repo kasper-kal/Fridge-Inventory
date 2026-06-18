@@ -243,6 +243,7 @@ function ManualAddFlow({
     e.preventDefault();
     if (!name.trim()) return toast.error("Naam is verplicht");
     setSaving(true);
+    const locationLabel = location === "fridge" ? "koelkast" : location === "freezer" ? "vriezer" : "voorraad";
     await createProduct({
       name: name.trim(),
       quantity: parseFloat(quantity) || 1,
@@ -250,7 +251,7 @@ function ManualAddFlow({
       storageLocation: location,
     });
     setSaving(false);
-    toast.success("Item toegevoegd");
+    toast.success(`${name.trim()} toegevoegd aan ${locationLabel}`);
     onClose();
   };
 
@@ -419,7 +420,9 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
       await createProduct({ name: item.name, quantity: item.quantity, unit: item.unit, storageLocation: item.location });
     }
     setSaving(false);
-    toast.success(`${parsedItems.length} item${parsedItems.length !== 1 ? "s" : ""} opgeslagen`);
+    const names = parsedItems.slice(0, 2).map(i => i.name).join(", ");
+    const extra = parsedItems.length > 2 ? ` en ${parsedItems.length - 2} meer` : "";
+    toast.success(`${names}${extra} toegevoegd`);
     onClose();
   };
 
