@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
-import { Users, Plus, LogIn, LogOut, Home, Eye, EyeOff, QrCode, ScanLine } from "lucide-react";
+import { Users, Plus, LogIn, LogOut, Home, Eye, EyeOff, QrCode, ScanLine, Trash2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useHousehold } from "@/context/household-context";
+import { useUser } from "@/context/user-context";
 import { CameraScanner } from "@/components/camera-scanner";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ function decodeQR(text: string): { name: string; pin: string } | null {
 
 export function HouseholdDialog() {
   const { household, setHousehold, leave } = useHousehold();
+  const { deviceId } = useUser();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"create" | "join">("create");
   const [joinMode, setJoinMode] = useState<"form" | "qr">("form");
@@ -46,8 +48,15 @@ export function HouseholdDialog() {
   const [showHouseholdPin, setShowHouseholdPin] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const reset = () => { setName(""); setPin(""); setShowQR(false); setJoinMode("form"); };
+  const reset = () => {
+    setName("");
+    setPin("");
+    setShowQR(false);
+    setJoinMode("form");
+    setConfirmDelete(false);
+  };
 
   const handleCreate = async () => {
     if (!name.trim() || !pin.trim()) return;
@@ -55,9 +64,9 @@ export function HouseholdDialog() {
     try {
       const data = await apiFetch("/api/households", {
         method: "POST",
-        body: JSON.stringify({ name: name.trim(), pin: pin.trim() }),
+        body: JSON.stringify({ name: name.trim(), pin: pin.trim(), deviceId }),
       });
-      setHousehold({ id: data.id, name: data.name, pin: pin.trim() });
+      setHousehold({ id: data.id, name: data.name, pin: pin.trim(), isCreator: true });
       toast.success(`Huishouden "${data.name}" aangemaakt — deel de pincode met je huisgenoten`);
       reset();
       setOpen(false);
@@ -74,9 +83,9 @@ export function HouseholdDialog() {
     try {
       const data = await apiFetch("/api/households/join", {
         method: "POST",
-        body: JSON.stringify({ name: joinName.trim(), pin: joinPin.trim() }),
+        body: JSON.stringify({ name: joinName.trim(), pin: joinPin.trim(), deviceId }),
       });
-      setHousehold({ id: data.id, name: data.name, pin: joinPin.trim() });
+      setHousehold({ id: data.id, name: data.name, pin: joinPin.trim(), isCreator: data.isCreator ?? false });
       toast.success(`Aangesloten bij ${data.name}`);
       reset();
       setOpen(false);
@@ -107,6 +116,25 @@ export function HouseholdDialog() {
     setOpen(false);
   };
 
+  const handleDelete = async () => {
+    if (!household) return;
+    setLoading(true);
+    try {
+      await apiFetch(`/api/households/${household.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", "x-device-id": deviceId },
+      });
+      leave();
+      toast.success(`Huishouden "${household.name}" verwijderd`);
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Verwijderen mislukt");
+    } finally {
+      setLoading(false);
+      setConfirmDelete(false);
+    }
+  };
+
   const qrValue = household?.pin ? encodeQR(household.name, household.pin) : "";
 
   return (
@@ -120,10 +148,10 @@ export function HouseholdDialog() {
         </button>
       </DrawerTrigger>
 
-      <DrawerContent className="max-w-[430px] mx-auto">
+      <DrawerContent className="max-w-[430px] mx-auto max-h-[90vh]">
         <DrawerTitle className="sr-only">Huishouden</DrawerTitle>
 
-        <div className="px-6 pt-6 pb-8 space-y-5">
+        <div className="overflow-y-auto px-6 pt-6 pb-8 space-y-5">
           {/* Header */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -146,7 +174,9 @@ export function HouseholdDialog() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-emerald-900 dark:text-emerald-100">{household.name}</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400">Iedereen met de naam + pincode ziet dit</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    {household.isCreator ? "Jij hebt dit huishouden aangemaakt" : "Iedereen met de naam + pincode ziet dit"}
+                  </p>
                 </div>
               </div>
 
@@ -191,12 +221,50 @@ export function HouseholdDialog() {
 
               <Button
                 variant="outline"
-                className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
+                className="w-full text-muted-foreground"
                 onClick={handleLeave}
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Huishouden verlaten
               </Button>
+
+              {/* Delete — only for creator */}
+              {household.isCreator && (
+                confirmDelete ? (
+                  <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/30 space-y-3">
+                    <p className="text-sm font-semibold text-destructive">Huishouden verwijderen?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Dit verwijdert het huishouden permanent. Huisgenoten verliezen de verbinding.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setConfirmDelete(false)}
+                        disabled={loading}
+                      >
+                        Annuleren
+                      </Button>
+                      <Button
+                        className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={handleDelete}
+                        disabled={loading}
+                      >
+                        {loading ? "Bezig..." : "Ja, verwijderen"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Huishouden verwijderen
+                  </Button>
+                )
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -274,7 +342,7 @@ export function HouseholdDialog() {
               )}
 
               {tab === "join" && joinMode === "qr" && (
-                <div className="py-2">
+                <div className="py-2 rounded-2xl overflow-hidden">
                   <CameraScanner
                     onResult={handleQRScan}
                     label="Scan de QR-code van je huisgenoot"

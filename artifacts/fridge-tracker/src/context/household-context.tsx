@@ -6,6 +6,7 @@ export interface Household {
   id: number;
   name: string;
   pin?: string;
+  isCreator?: boolean;
 }
 
 interface HouseholdContextValue {

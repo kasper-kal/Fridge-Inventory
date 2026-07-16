@@ -5,7 +5,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { HouseholdProvider } from "@/context/household-context";
 import { ProductsProvider } from "@/context/products-context";
 import { ShoppingListProvider } from "@/context/shopping-list-context";
+import { UserProvider } from "@/context/user-context";
+import { ThemeProvider } from "@/context/theme-context";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
+import { CookieBanner } from "@/components/cookie-banner";
+import { UserSetupModal } from "@/components/user-setup-modal";
+import { DeveloperPanel } from "@/components/developer-panel";
 import NotFound from "@/pages/not-found";
 import FridgePage from "@/pages/fridge";
 import FreezerPage from "@/pages/freezer";
@@ -35,17 +40,24 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <HouseholdProvider>
-          <ShoppingListProvider>
-            <ProductsProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
-              </WouterRouter>
-              <UndoRedoBar />
-              <Toaster position="top-center" />
-            </ProductsProvider>
-          </ShoppingListProvider>
-        </HouseholdProvider>
+        <UserProvider>
+          <ThemeProvider>
+            <HouseholdProvider>
+              <ShoppingListProvider>
+                <ProductsProvider>
+                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                    <Router />
+                  </WouterRouter>
+                  <UndoRedoBar />
+                  <Toaster position="top-center" />
+                  <CookieBanner />
+                  <UserSetupModal />
+                  <DeveloperPanel />
+                </ProductsProvider>
+              </ShoppingListProvider>
+            </HouseholdProvider>
+          </ThemeProvider>
+        </UserProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
