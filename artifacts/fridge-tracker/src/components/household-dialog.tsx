@@ -326,7 +326,7 @@ export function HouseholdDialog() {
                         placeholder="bijv. 1234"
                         type={showPin ? "text" : "password"}
                         autoComplete="new-password"
-                        className="pr-10"
+                        className="pr-10 bg-background"
                       />
                       <button
                         type="button"

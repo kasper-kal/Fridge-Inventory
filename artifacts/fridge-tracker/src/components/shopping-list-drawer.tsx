@@ -1,15 +1,22 @@
 import { useState } from "react";
-import { ShoppingCart, Trash2, Plus, X, Check, Share2, ExternalLink } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, X, Check, Share2, Users, RefreshCw } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useShoppingList } from "@/context/shopping-list-context";
+import { useHousehold } from "@/context/household-context";
 import { toast } from "sonner";
 
 export function ShoppingListDrawer() {
-  const { items, addItem, toggleItem, removeItem, clearChecked, clearAll, count } = useShoppingList();
+  const { items, isShared, setShared, addItem, toggleItem, removeItem, clearChecked, clearAll, count, isSyncing, refresh } = useShoppingList();
+  const { household } = useHousehold();
   const [open, setOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
+
+  const handleOpen = (v: boolean) => {
+    setOpen(v);
+    if (v) refresh();
+  };
 
   const handleAdd = () => {
     const name = newItem.trim();
@@ -35,14 +42,17 @@ export function ShoppingListDrawer() {
     }
   };
 
-  const handleOpenAH = () => {
-    window.open("https://www.ah.nl/", "_blank", "noopener,noreferrer");
+  const handleToggleShared = () => {
+    if (!household) return;
+    const next = !isShared;
+    setShared(next);
+    toast.success(next ? "Lijst gedeeld met huishouden" : "Lijst alleen voor jou");
   };
 
   const checkedCount = items.filter((i) => i.checked).length;
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={handleOpen}>
       <DrawerTrigger asChild>
         <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
           <ShoppingCart className="w-6 h-6 text-foreground" />
@@ -63,41 +73,48 @@ export function ShoppingListDrawer() {
             <ShoppingCart className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold">Boodschappenlijst</h2>
             {items.length > 0 && (
-              <span className="text-xs text-muted-foreground font-medium">
-                {count} over
-              </span>
+              <span className="text-xs text-muted-foreground font-medium">{count} over</span>
             )}
+            {isSyncing && <RefreshCw className="w-3.5 h-3.5 text-muted-foreground animate-spin" />}
           </div>
           <div className="flex gap-1">
             {items.length > 0 && (
               <>
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground"
-                  title="Delen"
-                >
+                <button onClick={handleShare} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Delen">
                   <Share2 className="w-4 h-4" />
                 </button>
                 {checkedCount > 0 && (
-                  <button
-                    onClick={clearChecked}
-                    className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground"
-                    title="Afgevinkte verwijderen"
-                  >
+                  <button onClick={clearChecked} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Afgevinkte verwijderen">
                     <Check className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  onClick={clearAll}
-                  className="p-2 rounded-full hover:bg-destructive/10 transition-colors text-destructive"
-                  title="Alles wissen"
-                >
+                <button onClick={clearAll} className="p-2 rounded-full hover:bg-destructive/10 transition-colors text-destructive" title="Alles wissen">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
             )}
           </div>
         </div>
+
+        {/* Household sharing toggle — only when in a household */}
+        {household && (
+          <button
+            onClick={handleToggleShared}
+            className={`flex items-center gap-3 px-5 py-2.5 border-b transition-colors text-sm ${
+              isShared
+                ? "bg-primary/5 text-primary"
+                : "text-muted-foreground hover:bg-secondary/30"
+            }`}
+          >
+            <div className={`w-9 h-5 rounded-full flex items-center transition-colors shrink-0 ${isShared ? "bg-primary" : "bg-muted"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform mx-0.5 ${isShared ? "translate-x-4" : "translate-x-0"}`} />
+            </div>
+            <Users className="w-4 h-4 shrink-0" />
+            <span className="font-medium">
+              {isShared ? `Gedeeld met ${household.name}` : "Delen met huishouden"}
+            </span>
+          </button>
+        )}
 
         {/* Add item */}
         <div className="flex gap-2 px-5 py-3 border-b shrink-0">
@@ -139,7 +156,6 @@ export function ShoppingListDrawer() {
             </>
           )}
         </div>
-
       </DrawerContent>
     </Drawer>
   );

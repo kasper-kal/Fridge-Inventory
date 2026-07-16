@@ -23,6 +23,14 @@ async function runMigrations() {
 
       ALTER TABLE households ADD COLUMN IF NOT EXISTS creator_device_id TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_address TEXT;
+
+      CREATE TABLE IF NOT EXISTS household_shopping_items (
+        id SERIAL PRIMARY KEY,
+        household_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        checked BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
     `);
     logger.info("Migrations applied");
   } catch (err) {
