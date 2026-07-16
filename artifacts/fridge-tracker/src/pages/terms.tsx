@@ -33,7 +33,7 @@ export default function TermsPage() {
 
         <section className="space-y-2">
           <h2 className="font-semibold text-base">4. Accountblokkering</h2>
-          <p className="text-muted-foreground">Beheerders behouden het recht om accounts te blokkeren bij misbruik of schending van deze voorwaarden.</p>
+          <p className="text-muted-foreground">Beheerders behouden het recht om accounts op elk moment en zonder opgave van reden te blokkeren. Hier kan geen bezwaar tegen worden gemaakt. Bij een blokkering kun je via de app een nieuw account aanmaken.</p>
         </section>
 
         <section className="space-y-2">
