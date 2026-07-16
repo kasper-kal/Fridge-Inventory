@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import {
   ChevronLeft, Refrigerator, Snowflake, Package, Plus, ShoppingCart,
   Users, UserCircle, Camera, ScanLine, Pencil, Trash2, ArrowLeftRight,
-  Home, QrCode, LogOut, Minus, Search, ArrowUpDown, Share2, Bell
+  Home, QrCode, LogOut, Minus, Search, ArrowUpDown, Share2, Bell, BookOpen
 } from "lucide-react";
 
 interface FeatureCardProps {
@@ -100,6 +100,34 @@ export default function HelpPage() {
       </div>
 
       <div className="px-5 space-y-8">
+
+        {/* ── QUICK GUIDE ── */}
+        <div className="bg-card border border-border rounded-3xl p-5 space-y-4">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-primary" />
+            Wat kun je doen?
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: <Plus className="w-4 h-4" />, text: "Producten toevoegen", color: "bg-emerald-500/10 text-emerald-600" },
+              { icon: <Pencil className="w-4 h-4" />, text: "Hoeveelheid aanpassen", color: "bg-sky-500/10 text-sky-600" },
+              { icon: <ArrowLeftRight className="w-4 h-4" />, text: "Verplaatsen / verwijderen", color: "bg-violet-500/10 text-violet-600" },
+              { icon: <ShoppingCart className="w-4 h-4" />, text: "Boodschappenlijstje", color: "bg-amber-500/10 text-amber-600" },
+              { icon: <Users className="w-4 h-4" />, text: "Delen met huishouden", color: "bg-pink-500/10 text-pink-600" },
+              { icon: <Camera className="w-4 h-4" />, text: "Bon of barcode scannen", color: "bg-indigo-500/10 text-indigo-600" },
+            ].map(({ icon, text, color }) => (
+              <div key={text} className="flex items-center gap-2.5 p-3 rounded-2xl bg-secondary/30">
+                <div className={`w-8 h-8 rounded-xl ${color} flex items-center justify-center shrink-0`}>
+                  {icon}
+                </div>
+                <span className="text-xs font-medium text-foreground leading-tight">{text}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Veeg een product naar links voor snelle acties. Tik op de + knop om iets toe te voegen.
+          </p>
+        </div>
 
         {/* ── 1. NAVIGATIE ── */}
         <SectionHeader title="1. Navigatie" subtitle="De drie tabs en de knoppen bovenin" />
