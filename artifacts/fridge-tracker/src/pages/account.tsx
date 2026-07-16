@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut } from "lucide-react";
+import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut, AlertTriangle } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { useUser } from "@/context/user-context";
 import { useHousehold } from "@/context/household-context";
@@ -12,6 +12,13 @@ export default function AccountPage() {
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState(user?.username ?? "");
   const [saving, setSaving] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("fridge_device_id");
+    localStorage.removeItem("fridge_user");
+    window.location.reload();
+  };
 
   const saveUsername = async () => {
     if (!newName.trim() || newName.trim() === user?.username) { setEditing(false); return; }
@@ -122,6 +129,39 @@ export default function AccountPage() {
             </button>
           </Link>
         </div>
+
+        {/* Logout */}
+        {!confirmLogout ? (
+          <button
+            onClick={() => setConfirmLogout(true)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-destructive/30 text-destructive hover:bg-destructive/5 transition-colors text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4" />
+            Log uit
+          </button>
+        ) : (
+          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <p className="text-sm font-medium">Weet je het zeker?</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Je wordt uitgelogd en je account wordt verwijderd van dit apparaat. Je kunt daarna een nieuw account aanmaken.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmLogout(false)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-2.5 rounded-xl bg-destructive text-white text-sm font-medium hover:bg-destructive/90 transition-colors"
+              >
+                Log uit
+              </button>
+            </div>
+          </div>
+        )}
 
         <p className="text-center text-xs text-muted-foreground pt-2">
           Koelkast Tracker · versie 1.0
