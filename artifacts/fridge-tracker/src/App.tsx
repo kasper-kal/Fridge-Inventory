@@ -20,6 +20,7 @@ import PantryPage from "@/pages/pantry";
 import AccountPage from "@/pages/account";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
+import HelpPage from "@/pages/help";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/account" component={AccountPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/help" component={HelpPage} />
       <Route component={NotFound} />
     </Switch>
   );

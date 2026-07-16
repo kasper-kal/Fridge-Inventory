@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut, AlertTriangle } from "lucide-react";
+import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut, AlertTriangle, BookOpen } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { useUser } from "@/context/user-context";
 import { useHousehold } from "@/context/household-context";
@@ -114,6 +114,13 @@ export default function AccountPage() {
 
         {/* Links */}
         <div className="bg-card border border-border rounded-3xl overflow-hidden divide-y divide-border">
+          <Link href="/help">
+            <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-secondary/30 transition-colors">
+              <BookOpen className="w-5 h-5 text-muted-foreground" />
+              <span className="flex-1 text-sm font-medium text-left">Gebruikersaanwijzing</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </Link>
           <Link href="/terms">
             <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-secondary/30 transition-colors">
               <FileText className="w-5 h-5 text-muted-foreground" />

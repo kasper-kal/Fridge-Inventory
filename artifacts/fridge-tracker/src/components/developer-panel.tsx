@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Trash2, Shield, ShieldOff, Home, Users, Palette, ChevronLeft, Delete } from "lucide-react";
+import { X, Trash2, Shield, ShieldOff, Home, Users, Palette, ChevronLeft, Delete, RotateCcw } from "lucide-react";
 import { useTheme } from "@/context/theme-context";
 import { toast } from "sonner";
 
 const ADMIN_PIN = "065728";
 const ADMIN_KEY = "dev-admin-065728";
 const SCROLL_THRESHOLD = 10;
+
+const DEFAULT_PRIMARY   = "220 68% 35%";
+const DEFAULT_SECONDARY = "200 30% 90%";
 
 function apiUrl(path: string) {
   const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
@@ -80,7 +83,6 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
       <button onClick={onClose} className="absolute top-5 left-5 text-gray-400 hover:text-white transition-colors">
         <ChevronLeft className="w-6 h-6" />
       </button>
-
       <div className="flex flex-col items-center gap-6 flex-1 justify-center">
         <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
           <Shield className="w-6 h-6 text-white" />
@@ -89,7 +91,6 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
           <p className="text-xl font-semibold">Ontwikkelaar</p>
           <p className="text-sm text-gray-400">Voer de toegangscode in</p>
         </div>
-
         <div className={`flex gap-3 mt-2 transition-transform duration-75 ${shake ? "translate-x-2" : ""}`}>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-150 ${
@@ -98,7 +99,6 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
           ))}
         </div>
       </div>
-
       <div className="grid grid-cols-3 gap-3 w-full max-w-[300px] px-4">
         {keys.map((k, i) => (
           k === "" ? <div key={i} /> :
@@ -117,6 +117,32 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
   );
 }
 
+function BanConfirmModal({ username, onConfirm, onCancel }: { username: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-6">
+      <div className="bg-card rounded-3xl p-6 space-y-4 w-full max-w-sm shadow-2xl">
+        <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+          <ShieldOff className="w-6 h-6 text-destructive" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-lg font-bold text-foreground">Gebruiker bannen?</p>
+          <p className="text-sm text-muted-foreground">
+            Weet je zeker dat je <span className="font-semibold text-foreground">{username}</span> wilt bannen? De gebruiker krijgt direct geen toegang meer tot de app.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border border-border text-sm font-semibold text-foreground hover:bg-secondary/50 transition-colors">
+            Annuleren
+          </button>
+          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-colors">
+            Ja, bannen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminPanel({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<AdminTab>("households");
   const [households, setHouseholds] = useState<HouseholdRow[]>([]);
@@ -125,6 +151,7 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   const [primaryHex, setPrimaryHex] = useState(() => hslStringToHex(primaryColor));
   const [secondaryHex, setSecondaryHex] = useState(() => hslStringToHex(secondaryColor));
   const [savingColors, setSavingColors] = useState(false);
+  const [confirmBanUser, setConfirmBanUser] = useState<UserRow | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -153,13 +180,13 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const toggleBan = async (id: number) => {
+  const executeBan = async (user: UserRow) => {
+    setConfirmBanUser(null);
     try {
-      const res = await fetch(apiUrl(`/api/users/${id}/ban`), { method: "POST" });
+      const res = await fetch(apiUrl(`/api/users/${user.id}/ban`), { method: "POST" });
       if (!res.ok) throw new Error((await res.json()).error);
-      const updated = await res.json();
-      setUsers((u) => u.map((x) => x.id === id ? updated : x));
-      toast.success(updated.isBanned ? "Gebruiker gebanned" : "Ban opgeheven");
+      setUsers((u) => u.filter((x) => x.id !== user.id));
+      toast.success(`${user.username} is gebanned`);
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -173,152 +200,178 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
     finally { setSavingColors(false); }
   };
 
+  const resetToDefault = async () => {
+    setPrimaryHex(hslStringToHex(DEFAULT_PRIMARY));
+    setSecondaryHex(hslStringToHex(DEFAULT_SECONDARY));
+    setSavingColors(true);
+    try {
+      await updateColor("primaryColor", DEFAULT_PRIMARY);
+      await updateColor("secondaryColor", DEFAULT_SECONDARY);
+      toast.success("Kleuren teruggezet naar standaard");
+    } catch { toast.error("Terugzetten mislukt"); }
+    finally { setSavingColors(false); }
+  };
+
   const tabs: { id: AdminTab; label: string; icon: typeof Home }[] = [
     { id: "households", label: "Huishoudens", icon: Home },
     { id: "users", label: "Gebruikers", icon: Users },
     { id: "colors", label: "Kleuren", icon: Palette },
   ];
 
+  const visibleUsers = users.filter(u => !u.isBanned);
+
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      <div className="flex items-center gap-3 px-5 pt-12 pb-4 border-b border-border">
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-primary" />
-        </div>
-        <div className="flex-1">
-          <p className="font-bold text-base text-foreground">Beheer</p>
-          <p className="text-xs text-muted-foreground">Ontwikkelaarsinstellingen</p>
-        </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+    <>
+      {confirmBanUser && (
+        <BanConfirmModal
+          username={confirmBanUser.username}
+          onConfirm={() => executeBan(confirmBanUser)}
+          onCancel={() => setConfirmBanUser(null)}
+        />
+      )}
 
-      <div className="flex border-b border-border px-4">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setTab(id)}
-            className={`flex items-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 transition-colors ${
-              tab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+      <div className="fixed inset-0 z-[100] flex flex-col bg-background">
+        <div className="flex items-center gap-3 px-5 pt-12 pb-4 border-b border-border">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-base text-foreground">Beheer</p>
+            <p className="text-xs text-muted-foreground">Ontwikkelaarsinstellingen</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors">
+            <X className="w-4 h-4" />
           </button>
-        ))}
-      </div>
+        </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
-        {tab === "households" && (
-          <>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              {households.length} huishouden{households.length !== 1 ? "s" : ""}
-            </p>
-            {households.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">Geen huishoudens gevonden</p>
-            )}
-            {households.map((h) => (
-              <div key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Home className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground truncate">{h.name}</p>
-                  <p className="text-xs text-muted-foreground">ID: {h.id} · {new Date(h.createdAt).toLocaleDateString("nl-NL")}</p>
-                </div>
-                <button onClick={() => deleteHousehold(h.id)}
-                  className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors shrink-0">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </>
-        )}
+        <div className="flex border-b border-border px-4">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`flex items-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 transition-colors ${
+                tab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {tab === "users" && (
-          <>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              {users.length} gebruiker{users.length !== 1 ? "s" : ""}
-            </p>
-            {users.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">Geen gebruikers gevonden</p>
-            )}
-            {users.map((u) => (
-              <div key={u.id} className={`p-3 rounded-2xl border ${u.isBanned ? "bg-destructive/5 border-destructive/30" : "bg-card border-border"}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${u.isBanned ? "bg-destructive/10" : "bg-primary/10"}`}>
-                    <Users className={`w-4 h-4 ${u.isBanned ? "text-destructive" : "text-primary"}`} />
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-8">
+          {tab === "households" && (
+            <>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                {households.length} huishouden{households.length !== 1 ? "s" : ""}
+              </p>
+              {households.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">Geen huishoudens gevonden</p>
+              )}
+              {households.map((h) => (
+                <div key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Home className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm text-foreground">{u.username}</p>
-                      {u.isBanned && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
-                          Gebanned
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-mono truncate">ID: {u.deviceId.slice(0, 12)}…</p>
-                    {u.ipAddress && (
-                      <p className="text-xs text-muted-foreground font-mono">IP: {u.ipAddress}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">Lid sinds {new Date(u.createdAt).toLocaleDateString("nl-NL")}</p>
+                    <p className="font-semibold text-sm text-foreground truncate">{h.name}</p>
+                    <p className="text-xs text-muted-foreground">ID: {h.id} · {new Date(h.createdAt).toLocaleDateString("nl-NL")}</p>
                   </div>
-                  <button onClick={() => toggleBan(u.id)}
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
-                      u.isBanned
-                        ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                        : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                    }`}
-                  >
-                    {u.isBanned ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                  <button onClick={() => deleteHousehold(h.id)}
+                    className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors shrink-0">
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            ))}
-          </>
-        )}
+              ))}
+            </>
+          )}
 
-        {tab === "colors" && (
-          <div className="space-y-5">
-            <p className="text-xs text-muted-foreground">Wijzigingen gelden voor alle gebruikers van de app.</p>
-
-            <div className="space-y-4">
-              {[
-                { label: "Primaire kleur", hex: primaryHex, setHex: setPrimaryHex },
-                { label: "Secundaire kleur", hex: secondaryHex, setHex: setSecondaryHex },
-              ].map(({ label, hex, setHex }) => (
-                <div key={label} className="p-4 rounded-2xl bg-card border border-border space-y-3">
-                  <p className="text-sm font-semibold text-foreground">{label}</p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl border border-border shadow-sm shrink-0" style={{ backgroundColor: hex }} />
-                    <input type="color" value={hex} onChange={(e) => setHex(e.target.value)}
-                      className="flex-1 h-10 rounded-xl cursor-pointer border border-border" />
+          {tab === "users" && (
+            <>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                {visibleUsers.length} actieve gebruiker{visibleUsers.length !== 1 ? "s" : ""}
+              </p>
+              {visibleUsers.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">Geen actieve gebruikers</p>
+              )}
+              {visibleUsers.map((u) => (
+                <div key={u.id} className="p-3 rounded-2xl border bg-card border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground">{u.username}</p>
+                      <p className="text-xs text-muted-foreground font-mono truncate">ID: {u.deviceId.slice(0, 12)}…</p>
+                      {u.ipAddress && <p className="text-xs text-muted-foreground font-mono">IP: {u.ipAddress}</p>}
+                      <p className="text-xs text-muted-foreground">Lid sinds {new Date(u.createdAt).toLocaleDateString("nl-NL")}</p>
+                    </div>
+                    <button onClick={() => setConfirmBanUser(u)}
+                      className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center transition-colors shrink-0">
+                      <Shield className="w-4 h-4" />
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground font-mono">{hexToHslString(hex)}</p>
                 </div>
               ))}
-            </div>
+            </>
+          )}
 
-            <div className="p-4 rounded-2xl bg-secondary/30 border border-border space-y-3">
-              <p className="text-sm font-semibold text-foreground">Voorbeeld</p>
-              <div className="flex gap-2">
-                <div className="flex-1 py-2.5 rounded-xl text-center text-sm font-semibold text-white" style={{ backgroundColor: primaryHex }}>
-                  Primair
-                </div>
-                <div className="flex-1 py-2.5 rounded-xl text-center text-sm font-semibold border border-border" style={{ backgroundColor: secondaryHex }}>
-                  Secundair
+          {tab === "colors" && (
+            <div className="space-y-5">
+              <p className="text-xs text-muted-foreground">Wijzigingen gelden voor alle gebruikers van de app.</p>
+
+              <div className="space-y-4">
+                {[
+                  { label: "Primaire kleur", hex: primaryHex, setHex: setPrimaryHex, defaultHsl: DEFAULT_PRIMARY },
+                  { label: "Secundaire kleur", hex: secondaryHex, setHex: setSecondaryHex, defaultHsl: DEFAULT_SECONDARY },
+                ].map(({ label, hex, setHex, defaultHsl }) => (
+                  <div key={label} className="p-4 rounded-2xl bg-card border border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">{label}</p>
+                      <button
+                        onClick={() => setHex(hslStringToHex(defaultHsl))}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-secondary/50"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Standaard
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl border border-border shadow-sm shrink-0" style={{ backgroundColor: hex }} />
+                      <input type="color" value={hex} onChange={(e) => setHex(e.target.value)}
+                        className="flex-1 h-10 rounded-xl cursor-pointer border border-border" />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono">{hexToHslString(hex)}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-secondary/30 border border-border space-y-3">
+                <p className="text-sm font-semibold text-foreground">Voorbeeld</p>
+                <div className="flex gap-2">
+                  <div className="flex-1 py-2.5 rounded-xl text-center text-sm font-semibold text-white" style={{ backgroundColor: primaryHex }}>
+                    Primair
+                  </div>
+                  <div className="flex-1 py-2.5 rounded-xl text-center text-sm font-semibold border border-border" style={{ backgroundColor: secondaryHex }}>
+                    Secundair
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button onClick={saveColors} disabled={savingColors}
-              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50 hover:brightness-110 transition-all active:scale-[.98]">
-              {savingColors ? "Opslaan..." : "Opslaan voor alle gebruikers"}
-            </button>
-          </div>
-        )}
+              <div className="flex gap-2">
+                <button onClick={resetToDefault} disabled={savingColors}
+                  className="flex-1 py-3 rounded-2xl border border-border text-sm font-semibold text-foreground disabled:opacity-50 hover:bg-secondary/50 transition-all flex items-center justify-center gap-2">
+                  <RotateCcw className="w-4 h-4" />
+                  Alles standaard
+                </button>
+                <button onClick={saveColors} disabled={savingColors}
+                  className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50 hover:brightness-110 transition-all active:scale-[.98]">
+                  {savingColors ? "Opslaan..." : "Opslaan"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
