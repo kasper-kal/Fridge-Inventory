@@ -49,8 +49,8 @@ function hexToHslString(hex: string): string {
   } catch { return "220 68% 35%"; }
 }
 
-interface HouseholdRow { id: number; name: string; createdAt: string; creatorDeviceId?: string; }
-interface UserRow { id: number; username: string; deviceId: string; isBanned: boolean; createdAt: string; }
+interface HouseholdRow { id: number; name: string; createdAt: string; }
+interface UserRow { id: number; username: string; deviceId: string; isBanned: boolean; ipAddress?: string | null; createdAt: string; }
 
 type AdminTab = "households" | "users" | "colors";
 
@@ -73,15 +73,11 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
   };
 
   const del = () => setEntered((v) => v.slice(0, -1));
-
   const keys = ["1","2","3","4","5","6","7","8","9","","0","del"];
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-gray-950 text-white pb-12 pt-16 select-none">
-      <button
-        onClick={onClose}
-        className="absolute top-5 left-5 text-gray-400 hover:text-white transition-colors"
-      >
+      <button onClick={onClose} className="absolute top-5 left-5 text-gray-400 hover:text-white transition-colors">
         <ChevronLeft className="w-6 h-6" />
       </button>
 
@@ -94,38 +90,24 @@ function PinScreen({ onSuccess, onClose }: { onSuccess: () => void; onClose: () 
           <p className="text-sm text-gray-400">Voer de toegangscode in</p>
         </div>
 
-        <div className={`flex gap-3 mt-2 transition-all duration-75 ${shake ? "translate-x-2" : ""}`}>
+        <div className={`flex gap-3 mt-2 transition-transform duration-75 ${shake ? "translate-x-2" : ""}`}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-150 ${
-                i < entered.length
-                  ? "bg-white border-white scale-110"
-                  : "bg-transparent border-gray-500"
-              }`}
-            />
+            <div key={i} className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-150 ${
+              i < entered.length ? "bg-white border-white scale-110" : "bg-transparent border-gray-500"
+            }`} />
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 w-full max-w-[300px] px-4">
         {keys.map((k, i) => (
-          k === "" ? (
-            <div key={i} />
-          ) : k === "del" ? (
-            <button
-              key={i}
-              onClick={del}
-              className="h-16 rounded-2xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform"
-            >
+          k === "" ? <div key={i} /> :
+          k === "del" ? (
+            <button key={i} onClick={del} className="h-16 rounded-2xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform">
               <Delete className="w-5 h-5" />
             </button>
           ) : (
-            <button
-              key={i}
-              onClick={() => press(k)}
-              className="h-16 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center"
-            >
+            <button key={i} onClick={() => press(k)} className="h-16 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 active:bg-white/30 transition-all flex items-center justify-center">
               <span className="text-2xl font-light">{k}</span>
             </button>
           )
@@ -156,14 +138,8 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    setPrimaryHex(hslStringToHex(primaryColor));
-  }, [primaryColor]);
-
-  useEffect(() => {
-    setSecondaryHex(hslStringToHex(secondaryColor));
-  }, [secondaryColor]);
+  useEffect(() => { setPrimaryHex(hslStringToHex(primaryColor)); }, [primaryColor]);
+  useEffect(() => { setSecondaryHex(hslStringToHex(secondaryColor)); }, [secondaryColor]);
 
   const deleteHousehold = async (id: number) => {
     try {
@@ -190,10 +166,8 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
   const saveColors = async () => {
     setSavingColors(true);
     try {
-      const pHsl = hexToHslString(primaryHex);
-      const sHsl = hexToHslString(secondaryHex);
-      await updateColor("primaryColor", pHsl);
-      await updateColor("secondaryColor", sHsl);
+      await updateColor("primaryColor", hexToHslString(primaryHex));
+      await updateColor("secondaryColor", hexToHslString(secondaryHex));
       toast.success("Kleuren opgeslagen voor alle gebruikers");
     } catch { toast.error("Opslaan mislukt"); }
     finally { setSavingColors(false); }
@@ -215,23 +189,16 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
           <p className="font-bold text-base text-foreground">Beheer</p>
           <p className="text-xs text-muted-foreground">Ontwikkelaarsinstellingen</p>
         </div>
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
-        >
+        <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       <div className="flex border-b border-border px-4">
         {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
+          <button key={id} onClick={() => setTab(id)}
             className={`flex items-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 transition-colors ${
-              tab === id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              tab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -258,10 +225,8 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
                   <p className="font-semibold text-sm text-foreground truncate">{h.name}</p>
                   <p className="text-xs text-muted-foreground">ID: {h.id} · {new Date(h.createdAt).toLocaleDateString("nl-NL")}</p>
                 </div>
-                <button
-                  onClick={() => deleteHousehold(h.id)}
-                  className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors shrink-0"
-                >
+                <button onClick={() => deleteHousehold(h.id)}
+                  className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors shrink-0">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -278,25 +243,36 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
               <p className="text-sm text-muted-foreground text-center py-8">Geen gebruikers gevonden</p>
             )}
             {users.map((u) => (
-              <div key={u.id} className={`flex items-center gap-3 p-3 rounded-2xl border ${u.isBanned ? "bg-destructive/5 border-destructive/30" : "bg-card border-border"}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${u.isBanned ? "bg-destructive/10" : "bg-primary/10"}`}>
-                  <Users className={`w-4 h-4 ${u.isBanned ? "text-destructive" : "text-primary"}`} />
+              <div key={u.id} className={`p-3 rounded-2xl border ${u.isBanned ? "bg-destructive/5 border-destructive/30" : "bg-card border-border"}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${u.isBanned ? "bg-destructive/10" : "bg-primary/10"}`}>
+                    <Users className={`w-4 h-4 ${u.isBanned ? "text-destructive" : "text-primary"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm text-foreground">{u.username}</p>
+                      {u.isBanned && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+                          Gebanned
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">ID: {u.deviceId.slice(0, 12)}…</p>
+                    {u.ipAddress && (
+                      <p className="text-xs text-muted-foreground font-mono">IP: {u.ipAddress}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">Lid sinds {new Date(u.createdAt).toLocaleDateString("nl-NL")}</p>
+                  </div>
+                  <button onClick={() => toggleBan(u.id)}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
+                      u.isBanned
+                        ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                        : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                    }`}
+                  >
+                    {u.isBanned ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground">{u.username}</p>
-                  <p className="text-xs text-muted-foreground font-mono truncate">{u.deviceId.slice(0, 16)}…</p>
-                  {u.isBanned && <p className="text-xs text-destructive font-semibold">Gebanned</p>}
-                </div>
-                <button
-                  onClick={() => toggleBan(u.id)}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
-                    u.isBanned
-                      ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                      : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                  }`}
-                >
-                  {u.isBanned ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-                </button>
               </div>
             ))}
           </>
@@ -304,51 +280,26 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "colors" && (
           <div className="space-y-5">
-            <p className="text-xs text-muted-foreground">
-              Wijzigingen gelden voor alle gebruikers van de app.
-            </p>
+            <p className="text-xs text-muted-foreground">Wijzigingen gelden voor alle gebruikers van de app.</p>
 
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
-                <p className="text-sm font-semibold text-foreground">Primaire kleur</p>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-2xl border border-border shadow-sm shrink-0"
-                    style={{ backgroundColor: primaryHex }}
-                  />
-                  <div className="flex-1">
-                    <input
-                      type="color"
-                      value={primaryHex}
-                      onChange={(e) => setPrimaryHex(e.target.value)}
-                      className="w-full h-10 rounded-xl cursor-pointer border border-border"
-                    />
+              {[
+                { label: "Primaire kleur", hex: primaryHex, setHex: setPrimaryHex },
+                { label: "Secundaire kleur", hex: secondaryHex, setHex: setSecondaryHex },
+              ].map(({ label, hex, setHex }) => (
+                <div key={label} className="p-4 rounded-2xl bg-card border border-border space-y-3">
+                  <p className="text-sm font-semibold text-foreground">{label}</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl border border-border shadow-sm shrink-0" style={{ backgroundColor: hex }} />
+                    <input type="color" value={hex} onChange={(e) => setHex(e.target.value)}
+                      className="flex-1 h-10 rounded-xl cursor-pointer border border-border" />
                   </div>
+                  <p className="text-xs text-muted-foreground font-mono">{hexToHslString(hex)}</p>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono">{hexToHslString(primaryHex)}</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
-                <p className="text-sm font-semibold text-foreground">Secundaire kleur</p>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-2xl border border-border shadow-sm shrink-0"
-                    style={{ backgroundColor: secondaryHex }}
-                  />
-                  <div className="flex-1">
-                    <input
-                      type="color"
-                      value={secondaryHex}
-                      onChange={(e) => setSecondaryHex(e.target.value)}
-                      className="w-full h-10 rounded-xl cursor-pointer border border-border"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground font-mono">{hexToHslString(secondaryHex)}</p>
-              </div>
+              ))}
             </div>
 
-            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-3">
+            <div className="p-4 rounded-2xl bg-secondary/30 border border-border space-y-3">
               <p className="text-sm font-semibold text-foreground">Voorbeeld</p>
               <div className="flex gap-2">
                 <div className="flex-1 py-2.5 rounded-xl text-center text-sm font-semibold text-white" style={{ backgroundColor: primaryHex }}>
@@ -360,11 +311,8 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            <button
-              onClick={saveColors}
-              disabled={savingColors}
-              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50 hover:brightness-110 transition-all active:scale-[.98]"
-            >
+            <button onClick={saveColors} disabled={savingColors}
+              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50 hover:brightness-110 transition-all active:scale-[.98]">
               {savingColors ? "Opslaan..." : "Opslaan voor alle gebruikers"}
             </button>
           </div>
@@ -396,25 +344,18 @@ export function DeveloperPanel() {
       });
     }
     lastScrollTime.current = now;
-
     if (resetTimer.current) clearTimeout(resetTimer.current);
     resetTimer.current = setTimeout(() => setScrollCount(0), 3000);
   }, []);
 
   useEffect(() => {
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY > 0) registerScroll();
-    };
-
+    const onWheel = (e: WheelEvent) => { if (e.deltaY > 0) registerScroll(); };
     let lastTouchY = 0;
-    const onTouchStart = (e: TouchEvent) => {
-      lastTouchY = e.touches[0]?.clientY ?? 0;
-    };
+    const onTouchStart = (e: TouchEvent) => { lastTouchY = e.touches[0]?.clientY ?? 0; };
     const onTouchEnd = (e: TouchEvent) => {
       const endY = e.changedTouches[0]?.clientY ?? 0;
       if (lastTouchY - endY > 50) registerScroll();
     };
-
     window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchend", onTouchEnd, { passive: true });

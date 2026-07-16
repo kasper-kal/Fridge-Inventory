@@ -13,13 +13,17 @@ export interface UserRecord {
   deviceId: string;
   username: string;
   isBanned: boolean;
+  ipAddress?: string | null;
+  createdAt?: string;
 }
 
 interface UserContextValue {
   deviceId: string;
   user: UserRecord | null;
   isRegistered: boolean;
+  isBanned: boolean;
   register: (username: string) => Promise<void>;
+  updateUsername: (username: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -43,7 +47,12 @@ function readCachedUser(): UserRecord | null {
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [deviceId] = useState<string>(getOrCreateDeviceId);
-  const [user, setUser] = useState<UserRecord | null>(readCachedUser);
+  const [user, setUserState] = useState<UserRecord | null>(readCachedUser);
+
+  const saveUser = useCallback((u: UserRecord) => {
+    setUserState(u);
+    localStorage.setItem(USER_KEY, JSON.stringify(u));
+  }, []);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -54,14 +63,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setUser(data);
-        localStorage.setItem(USER_KEY, JSON.stringify(data));
+        saveUser(data);
       }
     } catch { /* offline */ }
-  }, [deviceId]);
+  }, [deviceId, saveUser]);
 
+  // Always refresh on mount to get latest ban status
   useEffect(() => {
-    if (user) {
+    if (readCachedUser()) {
       fetchUser();
     }
   }, []);
@@ -77,16 +86,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error ?? "Registratie mislukt");
     }
     const data = await res.json();
-    setUser(data);
-    localStorage.setItem(USER_KEY, JSON.stringify(data));
-  }, [deviceId]);
+    saveUser(data);
+  }, [deviceId, saveUser]);
+
+  const updateUsername = useCallback(async (username: string) => {
+    const res = await fetch(apiUrl("/api/users/me"), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-device-id": deviceId },
+      body: JSON.stringify({ username }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Bijwerken mislukt");
+    }
+    const data = await res.json();
+    saveUser(data);
+  }, [deviceId, saveUser]);
 
   const refresh = useCallback(async () => {
     await fetchUser();
   }, [fetchUser]);
 
   return (
-    <UserContext.Provider value={{ deviceId, user, isRegistered: !!user, register, refresh }}>
+    <UserContext.Provider value={{
+      deviceId,
+      user,
+      isRegistered: !!user,
+      isBanned: user?.isBanned ?? false,
+      register,
+      updateUsername,
+      refresh,
+    }}>
       {children}
     </UserContext.Provider>
   );

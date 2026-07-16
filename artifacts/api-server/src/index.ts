@@ -22,6 +22,7 @@ async function runMigrations() {
       );
 
       ALTER TABLE households ADD COLUMN IF NOT EXISTS creator_device_id TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_address TEXT;
     `);
     logger.info("Migrations applied");
   } catch (err) {

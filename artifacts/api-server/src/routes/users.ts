@@ -5,6 +5,15 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
+function getClientIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    const first = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(",")[0];
+    return first.trim();
+  }
+  return req.socket?.remoteAddress ?? req.ip ?? "onbekend";
+}
+
 // GET /users — list all
 router.get("/", async (_req, res) => {
   try {
@@ -15,7 +24,7 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /users — register or get existing
+// POST /users — register or get existing (also refreshes IP)
 router.post("/", async (req, res) => {
   try {
     const { deviceId, username } = req.body ?? {};
@@ -24,9 +33,17 @@ router.post("/", async (req, res) => {
       return;
     }
 
+    const ip = getClientIp(req);
     const existing = await db.select().from(usersTable).where(eq(usersTable.deviceId, deviceId)).limit(1);
+
     if (existing.length > 0) {
-      res.json(existing[0]);
+      // Refresh IP on each login
+      const [updated] = await db
+        .update(usersTable)
+        .set({ ipAddress: ip })
+        .where(eq(usersTable.deviceId, deviceId))
+        .returning();
+      res.json(updated);
       return;
     }
 
@@ -37,12 +54,32 @@ router.post("/", async (req, res) => {
 
     const [user] = await db
       .insert(usersTable)
-      .values({ deviceId: deviceId.trim(), username: username.trim().slice(0, 32) })
+      .values({ deviceId: deviceId.trim(), username: username.trim().slice(0, 32), ipAddress: ip })
       .returning();
 
     res.status(201).json(user);
   } catch {
     res.status(500).json({ error: "Registratie mislukt" });
+  }
+});
+
+// PATCH /users/me — update own username
+router.patch("/me", async (req, res) => {
+  try {
+    const deviceId = req.headers["x-device-id"] as string | undefined;
+    const { username } = req.body ?? {};
+    if (!deviceId || !username || typeof username !== "string" || !username.trim()) {
+      res.status(400).json({ error: "Ongeldige invoer" }); return;
+    }
+    const [updated] = await db
+      .update(usersTable)
+      .set({ username: username.trim().slice(0, 32) })
+      .where(eq(usersTable.deviceId, deviceId))
+      .returning();
+    if (!updated) { res.status(404).json({ error: "Gebruiker niet gevonden" }); return; }
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Bijwerken mislukt" });
   }
 });
 

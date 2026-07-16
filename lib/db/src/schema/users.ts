@@ -5,6 +5,7 @@ export const usersTable = pgTable("users", {
   deviceId: text("device_id").notNull().unique(),
   username: text("username").notNull(),
   isBanned: boolean("is_banned").notNull().default(false),
+  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
