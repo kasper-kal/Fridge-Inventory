@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Snowflake, Refrigerator, Package, UserCircle } from "lucide-react";
+import { Snowflake, Refrigerator, Package } from "lucide-react";
 import { AddModal } from "./add-modal";
 
 export function BottomNav() {
@@ -15,35 +15,25 @@ export function BottomNav() {
         <AddModal />
       </div>
 
-      <div className="flex items-center justify-around h-20 px-2">
+      <div className="flex items-center justify-around h-20 px-4">
         <Link href="/">
-          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${active("/")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/")}`}>
             <Refrigerator className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Koelkast</span>
           </div>
         </Link>
 
         <Link href="/pantry">
-          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${active("/pantry")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/pantry")}`}>
             <Package className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Voorraad</span>
           </div>
         </Link>
 
-        {/* center spacer for floating + button */}
-        <div className="w-16" />
-
         <Link href="/freezer">
-          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${active("/freezer")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/freezer")}`}>
             <Snowflake className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Vriezer</span>
-          </div>
-        </Link>
-
-        <Link href="/account">
-          <div className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${active("/account")}`}>
-            <UserCircle className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium tracking-wide">Account</span>
           </div>
         </Link>
       </div>

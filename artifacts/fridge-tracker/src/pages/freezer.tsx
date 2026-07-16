@@ -5,7 +5,8 @@ import { SummaryStrip } from "@/components/summary-strip";
 import { ProductList } from "@/components/product-list";
 import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
 import { HouseholdDialog } from "@/components/household-dialog";
-import { Loader2, Snowflake, Users } from "lucide-react";
+import { Link } from "wouter";
+import { Loader2, Snowflake, Users, UserCircle } from "lucide-react";
 
 export default function FreezerPage() {
   const { freezerProducts, isLoading } = useProducts();
@@ -29,6 +30,11 @@ export default function FreezerPage() {
             )}
           </div>
           <div className="mt-2 flex items-center gap-1">
+            <Link href="/account">
+              <button className="p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+                <UserCircle className="w-6 h-6 text-foreground" />
+              </button>
+            </Link>
             <HouseholdDialog />
             <ShoppingListDrawer />
           </div>
