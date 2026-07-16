@@ -1,14 +1,16 @@
 import { useState, useRef, useCallback } from "react";
 import { LocalProduct, useProducts } from "@/context/products-context";
 import { useShoppingList } from "@/context/shopping-list-context";
-import { Trash2, Check, X, Plus, Minus, ArrowLeftRight, ShoppingCart } from "lucide-react";
+import { Trash2, Check, X, Plus, Minus, ShoppingCart, Refrigerator, Snowflake, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UnitSelect } from "@/components/unit-select";
 
 const SWIPE_THRESHOLD = 60;
-const SWIPE_REVEAL = 222;
+const BTN_W = 68;
+const NUM_BTNS = 4;
+const SWIPE_REVEAL = BTN_W * NUM_BTNS; // 272px
 
 function formatDate(iso: string) {
   try {
@@ -16,22 +18,15 @@ function formatDate(iso: string) {
   } catch { return ""; }
 }
 
-function nextLocation(current: LocalProduct["storageLocation"]): LocalProduct["storageLocation"] {
-  if (current === "fridge") return "freezer";
-  if (current === "freezer") return "pantry";
-  return "fridge";
-}
+type Location = LocalProduct["storageLocation"];
 
-function nextLocationLabel(current: LocalProduct["storageLocation"]): string {
-  if (current === "fridge") return "Vriezer";
-  if (current === "freezer") return "Voorraad";
-  return "Koelkast";
-}
-
-function nextLocationToast(dest: LocalProduct["storageLocation"]): string {
-  if (dest === "fridge") return "koelkast";
-  if (dest === "freezer") return "vriezer";
-  return "voorraad";
+function moveTargets(loc: Location): { dest: Location; label: string; Icon: React.ElementType; bg: string }[] {
+  const all = [
+    { dest: "fridge"  as Location, label: "Koelkast", Icon: Refrigerator, bg: "bg-sky-500" },
+    { dest: "freezer" as Location, label: "Vriezer",  Icon: Snowflake,    bg: "bg-indigo-500" },
+    { dest: "pantry"  as Location, label: "Voorraad", Icon: Package,      bg: "bg-amber-500" },
+  ];
+  return all.filter(t => t.dest !== loc);
 }
 
 export function ProductCard({ product }: { product: LocalProduct }) {
@@ -60,11 +55,11 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
   function stepForUnit(unit: string): number {
     switch (unit.toLowerCase().trim()) {
-      case "g":   return 100;
-      case "ml":  return 100;
-      case "kg":  return 0.5;
-      case "l":   return 0.5;
-      default:    return 1;
+      case "g":  return 100;
+      case "ml": return 100;
+      case "kg": return 0.5;
+      case "l":  return 0.5;
+      default:   return 1;
     }
   }
 
@@ -74,14 +69,13 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     updateProduct(product.id, { quantity: next });
   }, [product.id, product.quantity, product.unit, updateProduct]);
 
-  const handleMove = useCallback(async () => {
-    const dest = nextLocation(product.storageLocation);
+  const handleMove = useCallback(async (dest: Location, label: string) => {
     setPending(true);
     await updateProduct(product.id, { storageLocation: dest });
     setPending(false);
-    toast.success(`${product.name} verplaatst naar ${nextLocationToast(dest)}`);
+    toast.success(`${product.name} verplaatst naar ${label.toLowerCase()}`);
     closeSwipe();
-  }, [product.id, product.name, product.storageLocation, updateProduct]);
+  }, [product.id, product.name, updateProduct]);
 
   const handleDelete = useCallback(async () => {
     await deleteProduct(product.id);
@@ -142,6 +136,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   };
 
   const dateLabel = product.createdAt ? formatDate(product.createdAt) : "";
+  const targets = moveTargets(product.storageLocation);
 
   if (isEditing) {
     return (
@@ -174,32 +169,41 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     );
   }
 
-  const moveLabel = nextLocationLabel(product.storageLocation);
-
   return (
     <div className="relative rounded-2xl overflow-hidden select-none">
 
-      {/* Swipe action backdrop */}
+      {/* Swipe action backdrop — 4 buttons */}
       <div className="absolute inset-y-0 right-0 flex items-stretch">
+        {/* 1. Boodschappenlijst */}
         <button
           onClick={handleAddToList}
-          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white text-xs font-semibold active:brightness-90 transition-all"
+          style={{ width: BTN_W }}
+          className="flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white text-[10px] font-semibold active:brightness-90 transition-all"
         >
           <ShoppingCart className="w-5 h-5" />
           Lijst
         </button>
-        <button
-          onClick={handleMove}
-          disabled={pending}
-          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-primary text-primary-foreground text-xs font-semibold active:brightness-90 transition-all"
-        >
-          <ArrowLeftRight className="w-5 h-5" />
-          {moveLabel}
-        </button>
+
+        {/* 2 & 3. Verplaats naar de 2 andere locaties */}
+        {targets.map(({ dest, label, Icon, bg }) => (
+          <button
+            key={dest}
+            onClick={() => handleMove(dest, label)}
+            disabled={pending}
+            style={{ width: BTN_W }}
+            className={`flex flex-col items-center justify-center gap-1 ${bg} text-white text-[10px] font-semibold active:brightness-90 transition-all`}
+          >
+            <Icon className="w-5 h-5" />
+            {label}
+          </button>
+        ))}
+
+        {/* 4. Verwijder */}
         <button
           onClick={handleDelete}
           disabled={pending}
-          className="w-[74px] flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground text-xs font-semibold active:brightness-90 transition-all rounded-r-2xl"
+          style={{ width: BTN_W }}
+          className="flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-semibold active:brightness-90 transition-all rounded-r-2xl"
         >
           <Trash2 className="w-5 h-5" />
           Verwijder
