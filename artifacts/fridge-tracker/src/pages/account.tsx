@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut, AlertTriangle, BookOpen } from "lucide-react";
+import { User, Pencil, Check, X, Home, FileText, Shield, ChevronRight, LogOut, AlertTriangle, BookOpen, RotateCcw } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { useUser } from "@/context/user-context";
 import { useHousehold } from "@/context/household-context";
@@ -13,6 +13,15 @@ export default function AccountPage() {
   const [newName, setNewName] = useState(user?.username ?? "");
   const [saving, setSaving] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleReset = () => {
+    localStorage.clear();
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
+    window.location.reload();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("fridge_device_id");
@@ -165,6 +174,41 @@ export default function AccountPage() {
                 className="flex-1 py-2.5 rounded-xl bg-destructive text-white text-sm font-medium hover:bg-destructive/90 transition-colors"
               >
                 Log uit
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reset app */}
+        {!confirmReset ? (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-border text-muted-foreground hover:bg-secondary/30 transition-colors text-sm font-medium"
+          >
+            <RotateCcw className="w-4 h-4" />
+            App resetten
+          </button>
+        ) : (
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <p className="text-sm font-medium">App volledig resetten?</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Dit wist <strong>alles</strong>: je account, alle producten, je huishouden, cookie-instellingen en onboardinggeschiedenis. De app start daarna opnieuw op alsof hij nooit is gebruikt.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+              >
+                Alles wissen
               </button>
             </div>
           </div>
