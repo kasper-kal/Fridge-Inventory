@@ -102,30 +102,13 @@ export default function HelpPage() {
       <div className="px-5 space-y-8">
 
         {/* ── QUICK GUIDE ── */}
-        <div className="bg-card border border-border rounded-3xl p-5 space-y-4">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            Wat kun je doen?
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: <Plus className="w-4 h-4" />, text: "Producten toevoegen", color: "bg-emerald-500/10 text-emerald-600" },
-              { icon: <Pencil className="w-4 h-4" />, text: "Hoeveelheid aanpassen", color: "bg-sky-500/10 text-sky-600" },
-              { icon: <ArrowLeftRight className="w-4 h-4" />, text: "Verplaatsen / verwijderen", color: "bg-violet-500/10 text-violet-600" },
-              { icon: <ShoppingCart className="w-4 h-4" />, text: "Boodschappenlijstje", color: "bg-amber-500/10 text-amber-600" },
-              { icon: <Users className="w-4 h-4" />, text: "Delen met huishouden", color: "bg-pink-500/10 text-pink-600" },
-              { icon: <Camera className="w-4 h-4" />, text: "Bon of barcode scannen", color: "bg-indigo-500/10 text-indigo-600" },
-            ].map(({ icon, text, color }) => (
-              <div key={text} className="flex items-center gap-2.5 p-3 rounded-2xl bg-secondary/30">
-                <div className={`w-8 h-8 rounded-xl ${color} flex items-center justify-center shrink-0`}>
-                  {icon}
-                </div>
-                <span className="text-xs font-medium text-foreground leading-tight">{text}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Veeg een product naar links voor snelle acties. Tik op de + knop om iets toe te voegen.
+        <div className="bg-card border border-border rounded-3xl p-5 space-y-3">
+          <h2 className="text-base font-bold text-foreground">Welkom bij Koelkast Tracker</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Voeg snel producten toe via de <strong className="text-foreground">+ knop</strong> onderin — handmatig, met de camera, of door een kassabon te scannen. Veeg op een product naar <strong className="text-foreground">links</strong> om het te verplaatsen, op je boodschappenlijst te zetten, of te verwijderen.
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Deel je voorraad met huisgenoten via <strong className="text-foreground">Huishouden</strong> rechtsbovenin. Maak een huishouden aan met een naam en pincode, en deel die met je gezinsleden zodat jullie samen dezelfde lijst zien.
           </p>
         </div>
 
