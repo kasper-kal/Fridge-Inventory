@@ -68,7 +68,7 @@ function AppInner() {
       </WouterRouter>
       {phase !== "story" && phase !== "tour" && <UndoRedoBar />}
       <Toaster position="top-center" />
-      <CookieBanner />
+      {phase === "done" && <CookieBanner />}
       <DeveloperPanel />
 
       {phase === "story" && (
