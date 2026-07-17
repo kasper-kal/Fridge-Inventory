@@ -14,7 +14,7 @@ const slides = [
     iconBg: "bg-amber-400/15",
     eyebrow: "Herken je dit?",
     title: "Je staat in de supermarkt.",
-    body: "Maar moet je nou wel of niet melk halen? Zit er nog genoeg brood thuis? En die soep van vorige week — weg of niet?",
+    body: "Maar moet je nou wel of niet melk halen? Is er nog genoeg brood thuis? En die soep van vorige week — weg of niet?",
     cta: "Volgende",
   },
   {

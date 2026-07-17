@@ -67,7 +67,7 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
 
   if (!products || products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in duration-500">
+      <div data-tour="product-list" className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in duration-500">
         <div className="w-20 h-20 bg-secondary/50 rounded-full flex items-center justify-center mb-6">
           {emptyIcon}
         </div>
@@ -78,7 +78,7 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="product-list">
       {/* Search + Sort bar */}
       <div className="flex gap-2">
         <div className="relative flex-1">

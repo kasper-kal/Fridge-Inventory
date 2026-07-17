@@ -55,6 +55,8 @@ function AppInner() {
     isRegistered && hasSeenOnboarding() && !localStorage.getItem(TOUR_SEEN_KEY)
   );
 
+  const storyShowing = isRegistered && !hasSeenOnboarding();
+
   if (isBanned) return <BannedScreen />;
 
   return (
@@ -62,7 +64,7 @@ function AppInner() {
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <Router />
       </WouterRouter>
-      <UndoRedoBar />
+      {!storyShowing && <UndoRedoBar />}
       <Toaster position="top-center" />
       <CookieBanner />
       <UserSetupModal />

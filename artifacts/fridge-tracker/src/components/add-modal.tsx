@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Trash2, Plus, Camera, PenLine, ChevronRight, X, Loader2, Save, Upload, Barcode, Refrigerator, Snowflake, Package } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,12 @@ export function AddModal() {
   const [view, setView] = useState<View>("menu");
   const [prefillName, setPrefillName] = useState("");
   const [prefillLocation, setPrefillLocation] = useState<StorageLocation>("fridge");
+
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    document.addEventListener("open-add-modal", handler);
+    return () => document.removeEventListener("open-add-modal", handler);
+  }, []);
 
   const resetAndClose = () => {
     setOpen(false);

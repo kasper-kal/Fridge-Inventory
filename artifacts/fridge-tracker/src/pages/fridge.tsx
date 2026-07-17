@@ -30,7 +30,7 @@ export default function FridgePage() {
             )}
           </div>
           <div className="mt-2 flex items-center gap-1">
-            <Link href="/account">
+            <Link href="/account" data-tour="account-button">
               <button className="p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
                 <UserCircle className="w-6 h-6 text-foreground" />
               </button>

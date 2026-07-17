@@ -15,7 +15,7 @@ export function BottomNav() {
         <AddModal />
       </div>
 
-      <div className="flex items-center justify-around h-20 px-4">
+      <div className="flex items-center justify-around h-20 px-4" data-tour="bottom-nav-tabs">
         <Link href="/">
           <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/")}`}>
             <Refrigerator className="w-6 h-6 mb-1" />
