@@ -42,6 +42,7 @@ interface ProductsContextValue {
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
+  refetch: () => Promise<void>;
   createProduct: (data: CreateInput) => Promise<void>;
   updateProduct: (id: number, data: UpdateInput) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
@@ -144,22 +145,29 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const canUndo = past.current.length > 0;
   const canRedo = future.current.length > 0;
 
+  const applyServerData = useCallback((data: LocalProduct[]) => {
+    if (!Array.isArray(data)) return;
+    setProductsRaw((current) => {
+      const serverIds = data.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
+      const localIds  = current.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
+      if (serverIds === localIds) return current;
+      writeStorage(storageKey(householdId), data);
+      return data;
+    });
+  }, [householdId]);
+
   const syncFromServer = useCallback((isInitial = false) => {
     apiFetch("/api/products", householdId)
-      .then((data: LocalProduct[]) => {
-        if (Array.isArray(data)) {
-          setProductsRaw((current) => {
-            const serverIds = data.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
-            const localIds  = current.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
-            if (serverIds === localIds) return current;
-            writeStorage(storageKey(householdId), data);
-            return data;
-          });
-        }
-      })
+      .then((data: LocalProduct[]) => applyServerData(data))
       .catch(() => {})
       .finally(() => { if (isInitial) setIsLoading(false); });
-  }, [householdId]);
+  }, [householdId, applyServerData]);
+
+  const refetch = useCallback((): Promise<void> => {
+    return apiFetch("/api/products", householdId)
+      .then((data: LocalProduct[]) => applyServerData(data))
+      .catch(() => {});
+  }, [householdId, applyServerData]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -210,7 +218,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   return (
     <ProductsContext.Provider value={{
       products, isLoading, fridgeProducts, freezerProducts, pantryProducts, summary,
-      canUndo, canRedo, undo, redo,
+      canUndo, canRedo, undo, redo, refetch,
       createProduct, updateProduct, deleteProduct,
     }}>
       {children}

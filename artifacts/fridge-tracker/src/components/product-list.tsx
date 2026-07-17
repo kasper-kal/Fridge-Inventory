@@ -2,7 +2,22 @@ import { useState, useMemo } from "react";
 import { Product } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/product-card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X, ArrowUpDown } from "lucide-react";
+
+export function ProductListSkeleton() {
+  return (
+    <div className="space-y-3 pt-1">
+      <div className="flex gap-2">
+        <Skeleton className="h-11 flex-1 rounded-xl" />
+        <Skeleton className="h-11 w-14 rounded-xl" />
+      </div>
+      {[...Array(5)].map((_, i) => (
+        <Skeleton key={i} className="h-[68px] w-full rounded-2xl" />
+      ))}
+    </div>
+  );
+}
 
 type SortKey = "naam-az" | "naam-za" | "hoeveelheid-hoog" | "hoeveelheid-laag" | "nieuwste" | "oudste";
 

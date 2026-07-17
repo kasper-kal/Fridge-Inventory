@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UnitSelect } from "@/components/unit-select";
+import { haptic } from "@/lib/haptics";
 
 const SWIPE_THRESHOLD = 60;
 const BTN_W = 68;
@@ -48,6 +49,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   const closeSwipe = () => { setSwiped(false); setSwipeOffset(0); };
 
   const handleAddToList = useCallback(() => {
+    haptic(12);
     addItem(product.name);
     toast.success(`${product.name} op boodschappenlijst`);
     closeSwipe();
@@ -64,12 +66,14 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   }
 
   const adjustQuantity = useCallback((delta: number) => {
+    haptic(6);
     const step = stepForUnit(product.unit);
     const next = Math.max(0, Math.round((product.quantity + delta * step) * 100) / 100);
     updateProduct(product.id, { quantity: next });
   }, [product.id, product.quantity, product.unit, updateProduct]);
 
   const handleMove = useCallback(async (dest: Location, label: string) => {
+    haptic(12);
     setPending(true);
     await updateProduct(product.id, { storageLocation: dest });
     setPending(false);
@@ -78,6 +82,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
   }, [product.id, product.name, updateProduct]);
 
   const handleDelete = useCallback(async () => {
+    haptic([10, 50, 20]);
     await deleteProduct(product.id);
     toast.success(`${product.name} verwijderd`);
   }, [product.id, product.name, deleteProduct]);
@@ -127,6 +132,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
       }
     } else {
       if (swipeOffset < -SWIPE_THRESHOLD) {
+        haptic(8);
         setSwiped(true); setSwipeOffset(-SWIPE_REVEAL);
       } else {
         setSwiped(false); setSwipeOffset(0);

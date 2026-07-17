@@ -2,13 +2,17 @@ import { useState } from "react";
 import { Refrigerator, User } from "lucide-react";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
+import { OnboardingSlides, hasSeenOnboarding } from "@/components/onboarding-slides";
 
 export function UserSetupModal() {
   const { isRegistered, register } = useUser();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (isRegistered) return null;
+  if (isRegistered) {
+    if (!hasSeenOnboarding()) return <OnboardingSlides />;
+    return null;
+  }
 
   const handleRegister = async () => {
     if (!username.trim()) return;

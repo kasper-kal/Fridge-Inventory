@@ -2,18 +2,18 @@ import { useProducts } from "@/context/products-context";
 import { useHousehold } from "@/context/household-context";
 import { Layout } from "@/components/layout";
 import { SummaryStrip } from "@/components/summary-strip";
-import { ProductList } from "@/components/product-list";
+import { ProductList, ProductListSkeleton } from "@/components/product-list";
 import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
 import { HouseholdDialog } from "@/components/household-dialog";
 import { Link } from "wouter";
-import { Loader2, Snowflake, Users, UserCircle } from "lucide-react";
+import { Snowflake, Users, UserCircle } from "lucide-react";
 
 export default function FreezerPage() {
-  const { freezerProducts, isLoading } = useProducts();
+  const { freezerProducts, isLoading, refetch } = useProducts();
   const { household } = useHousehold();
 
   return (
-    <Layout>
+    <Layout onRefresh={refetch}>
       <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="flex items-start justify-between">
           <div>
@@ -45,9 +45,7 @@ export default function FreezerPage() {
 
       <div className="px-6 pb-4">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
+          <ProductListSkeleton />
         ) : (
           <ProductList
             products={freezerProducts}
