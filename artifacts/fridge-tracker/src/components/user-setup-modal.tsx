@@ -2,17 +2,13 @@ import { useState } from "react";
 import { Refrigerator, User } from "lucide-react";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
-import { OnboardingSlides, hasSeenOnboarding } from "@/components/onboarding-slides";
 
 export function UserSetupModal() {
   const { isRegistered, register } = useUser();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (isRegistered) {
-    if (!hasSeenOnboarding()) return <OnboardingSlides />;
-    return null;
-  }
+  if (isRegistered) return null;
 
   const handleRegister = async () => {
     if (!username.trim()) return;
@@ -29,7 +25,7 @@ export function UserSetupModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-[430px] bg-card rounded-t-3xl p-6 pb-10 space-y-6 shadow-xl">
+      <div className="w-full max-w-[430px] bg-card rounded-t-3xl p-6 pb-10 space-y-6 shadow-xl animate-in slide-in-from-bottom-6 duration-400">
         <div className="flex justify-center">
           <div className="w-14 h-14 rounded-3xl bg-primary/10 flex items-center justify-center">
             <Refrigerator className="w-7 h-7 text-primary" />
@@ -63,7 +59,7 @@ export function UserSetupModal() {
             disabled={!username.trim() || loading}
             className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 transition-all active:scale-[.98]"
           >
-            {loading ? "Bezig..." : "Aan de slag →"}
+            {loading ? "Bezig..." : "Aan de slag \u2192"}
           </button>
         </div>
 

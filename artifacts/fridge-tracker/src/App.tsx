@@ -9,7 +9,7 @@ import { UserProvider } from "@/context/user-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { useUser } from "@/context/user-context";
 import { useState } from "react";
-import { hasSeenOnboarding } from "@/components/onboarding-slides";
+import { hasSeenOnboarding, OnboardingSlides } from "@/components/onboarding-slides";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
 import { CookieBanner } from "@/components/cookie-banner";
 import { UserSetupModal } from "@/components/user-setup-modal";
@@ -50,12 +50,14 @@ function Router() {
 }
 
 function AppInner() {
-  const { isBanned, isRegistered } = useUser();
-  const [showTour, setShowTour] = useState(() =>
-    isRegistered && hasSeenOnboarding() && !localStorage.getItem(TOUR_SEEN_KEY)
-  );
+  const { isBanned } = useUser();
 
-  const storyShowing = isRegistered && !hasSeenOnboarding();
+  const [phase, setPhase] = useState<"none" | "story" | "tour" | "setup" | "done">(() => {
+    if (localStorage.getItem("fridge_device_id")) return "done";
+    if (!hasSeenOnboarding()) return "story";
+    if (!localStorage.getItem(TOUR_SEEN_KEY)) return "tour";
+    return "setup";
+  });
 
   if (isBanned) return <BannedScreen />;
 
@@ -64,18 +66,30 @@ function AppInner() {
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <Router />
       </WouterRouter>
-      {!storyShowing && <UndoRedoBar />}
+      {phase !== "story" && phase !== "tour" && <UndoRedoBar />}
       <Toaster position="top-center" />
       <CookieBanner />
-      <UserSetupModal />
       <DeveloperPanel />
-      {showTour && (
+
+      {phase === "story" && (
+        <OnboardingSlides
+          onDone={() => {
+            setPhase("tour");
+          }}
+        />
+      )}
+
+      {phase === "tour" && (
         <TourOverlay
           onDone={() => {
             localStorage.setItem(TOUR_SEEN_KEY, "1");
-            setShowTour(false);
+            setPhase("setup");
           }}
         />
+      )}
+
+      {phase === "setup" && (
+        <UserSetupModal />
       )}
     </>
   );
