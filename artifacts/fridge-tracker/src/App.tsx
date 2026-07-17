@@ -8,11 +8,14 @@ import { ShoppingListProvider } from "@/context/shopping-list-context";
 import { UserProvider } from "@/context/user-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { useUser } from "@/context/user-context";
+import { useState } from "react";
+import { hasSeenOnboarding } from "@/components/onboarding-slides";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
 import { CookieBanner } from "@/components/cookie-banner";
 import { UserSetupModal } from "@/components/user-setup-modal";
 import { BannedScreen } from "@/components/banned-screen";
 import { DeveloperPanel } from "@/components/developer-panel";
+import { TourOverlay, TOUR_SEEN_KEY } from "@/components/tour";
 import NotFound from "@/pages/not-found";
 import FridgePage from "@/pages/fridge";
 import FreezerPage from "@/pages/freezer";
@@ -48,6 +51,9 @@ function Router() {
 
 function AppInner() {
   const { isBanned, isRegistered } = useUser();
+  const [showTour, setShowTour] = useState(() =>
+    isRegistered && hasSeenOnboarding() && !localStorage.getItem(TOUR_SEEN_KEY)
+  );
 
   if (isBanned) return <BannedScreen />;
 
@@ -59,8 +65,16 @@ function AppInner() {
       <UndoRedoBar />
       <Toaster position="top-center" />
       <CookieBanner />
-      {!isRegistered && <UserSetupModal />}
+      <UserSetupModal />
       <DeveloperPanel />
+      {showTour && (
+        <TourOverlay
+          onDone={() => {
+            localStorage.setItem(TOUR_SEEN_KEY, "1");
+            setShowTour(false);
+          }}
+        />
+      )}
     </>
   );
 }

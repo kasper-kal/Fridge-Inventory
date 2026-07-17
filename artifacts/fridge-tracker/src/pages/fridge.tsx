@@ -35,8 +35,8 @@ export default function FridgePage() {
                 <UserCircle className="w-6 h-6 text-foreground" />
               </button>
             </Link>
-            <HouseholdDialog />
-            <ShoppingListDrawer />
+            <span data-tour="household-button" className="inline-flex"><HouseholdDialog /></span>
+            <span data-tour="shopping-list-button" className="inline-flex"><ShoppingListDrawer /></span>
           </div>
         </div>
       </div>
