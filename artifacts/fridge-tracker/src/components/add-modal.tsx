@@ -247,7 +247,10 @@ function ManualAddFlow({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return toast.error("Naam is verplicht");
+    if (!name.trim()) {
+      toast.error("Naam is verplicht");
+      return;
+    }
     setSaving(true);
     const locationLabel = location === "fridge" ? "koelkast" : location === "freezer" ? "vriezer" : "voorraad";
     await createProduct({

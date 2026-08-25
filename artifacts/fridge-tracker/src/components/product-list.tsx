@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Product } from "@workspace/api-client-react";
+import { LocalProduct } from "@/context/products-context";
 import { ProductCard } from "@/components/product-card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +30,7 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "hoeveelheid-laag", label: "Hoeveelheid ↑" },
 ];
 
-function sortProducts(products: Product[], key: SortKey): Product[] {
+function sortProducts(products: LocalProduct[], key: SortKey): LocalProduct[] {
   return [...products].sort((a, b) => {
     switch (key) {
       case "naam-az":          return a.name.localeCompare(b.name, "nl");
@@ -44,7 +44,7 @@ function sortProducts(products: Product[], key: SortKey): Product[] {
 }
 
 interface ProductListProps {
-  products: Product[] | undefined;
+  products: LocalProduct[] | undefined;
   emptyIcon: React.ReactNode;
   emptyTitle: string;
   emptyMessage: string;

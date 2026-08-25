@@ -1,10 +1,14 @@
-import { Router } from "express";
+import { Request, Router } from "express";
 import { pool } from "@workspace/db";
 
 const router = Router({ mergeParams: true });
 
+function getHouseholdId(req: Request) {
+  return parseInt((req.params as { householdId?: string }).householdId ?? "");
+}
+
 router.get("/", async (req, res) => {
-  const hid = parseInt(req.params.householdId ?? "");
+  const hid = getHouseholdId(req);
   if (isNaN(hid)) return void res.status(400).json({ error: "Ongeldig ID" });
   try {
     const { rows } = await pool.query(
@@ -18,7 +22,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const hid = parseInt(req.params.householdId ?? "");
+  const hid = getHouseholdId(req);
   if (isNaN(hid)) return void res.status(400).json({ error: "Ongeldig ID" });
   const { name } = req.body ?? {};
   if (!name?.trim()) return void res.status(400).json({ error: "Naam verplicht" });
@@ -35,7 +39,7 @@ router.post("/", async (req, res) => {
 });
 
 router.patch("/:itemId", async (req, res) => {
-  const hid = parseInt(req.params.householdId ?? "");
+  const hid = getHouseholdId(req);
   const iid = parseInt(req.params.itemId ?? "");
   if (isNaN(hid) || isNaN(iid)) return void res.status(400).json({ error: "Ongeldig ID" });
   const { checked } = req.body ?? {};
@@ -54,7 +58,7 @@ router.patch("/:itemId", async (req, res) => {
 });
 
 router.delete("/:itemId", async (req, res) => {
-  const hid = parseInt(req.params.householdId ?? "");
+  const hid = getHouseholdId(req);
   const iid = parseInt(req.params.itemId ?? "");
   if (isNaN(hid) || isNaN(iid)) return void res.status(400).json({ error: "Ongeldig ID" });
   try {
@@ -66,7 +70,7 @@ router.delete("/:itemId", async (req, res) => {
 });
 
 router.delete("/", async (req, res) => {
-  const hid = parseInt(req.params.householdId ?? "");
+  const hid = getHouseholdId(req);
   if (isNaN(hid)) return void res.status(400).json({ error: "Ongeldig ID" });
   try {
     if (req.query.checked === "true") {

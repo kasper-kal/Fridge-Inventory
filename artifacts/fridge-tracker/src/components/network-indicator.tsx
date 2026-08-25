@@ -33,6 +33,7 @@ export function NetworkIndicator() {
       }, 2500);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [online, wasOffline]);
 
   if (online && !showReconnected) return null;
