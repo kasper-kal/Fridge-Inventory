@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Refrigerator } from "lucide-react";
 
 export const TOUR_SEEN_KEY = "fridge_tour_seen";
 
@@ -7,16 +6,15 @@ const STEPS = [
   {
     target: '[data-tour="add-button"]',
     title: "Producten toevoegen",
-    description:
-      "Tik op de + knop om iets toe te voegen. Je kunt het handmatig intypen, een barcode scannen, of een kassabon fotograferen.",
+    description: "Tik op de + knop om het toevoegmenu te openen. Daarna gaat de uitleg vanzelf verder.",
     pad: 18,
     tooltipBelow: false,
   },
   {
     target: '[data-tour="product-list"]',
-    title: "Veeg naar links",
+    title: "Probeer een veegactie",
     description:
-      "Veeg een product naar links om het te verplaatsen, op de boodschappenlijst te zetten, of te verwijderen.",
+      "Veeg het voorbeeldproduct ‘Probeer mij uit’ naar links. Kies daarna een actie om de veegbediening te testen.",
     pad: 12,
     tooltipBelow: false,
   },
@@ -24,7 +22,7 @@ const STEPS = [
     target: '[data-tour="bottom-nav-tabs"]',
     title: "Drie opslagplekken",
     description:
-      "Navigeer tussen je koelkast, voorraadkast en vriezer via de tabs onderin. Je kunt ook van links naar rechts vegen om te wisselen.",
+      "Tik op een van de tabs onderin om tussen je koelkast, voorraadkast en vriezer te navigeren.",
     pad: 10,
     tooltipBelow: false,
   },
@@ -32,7 +30,7 @@ const STEPS = [
     target: '[data-tour="household-button"]',
     title: "Deel met huisgenoten",
     description:
-      "Maak een huishouden aan en nodig je gezin of huisgenoten uit. Zo zien jullie allemaal dezelfde koelkast in realtime.",
+      "Tik op het huisgenoten-icoon om te zien waar je een huishouden aanmaakt. De uitleg gaat daarna vanzelf verder.",
     pad: 10,
     tooltipBelow: true,
   },
@@ -40,7 +38,7 @@ const STEPS = [
     target: '[data-tour="shopping-list-button"]',
     title: "Boodschappenlijst",
     description:
-      "Open je boodschappenlijst hier. Veeg een product naar links en tik op 'Lijst' om het er direct aan toe te voegen.",
+      "Tik op het winkelwagen-icoon om je boodschappenlijst te openen.",
     pad: 10,
     tooltipBelow: true,
   },
@@ -48,7 +46,7 @@ const STEPS = [
     target: '[data-tour="account-button"]',
     title: "Jouw profiel",
     description:
-      "Bekijk je account, pas je naam aan, of open de gebruikersaanwijzing als je iets niet weet.",
+      "Tik op je profiel om je account en de gebruikersaanwijzing te vinden. Daarna ben je klaar.",
     pad: 10,
     tooltipBelow: true,
   },
@@ -86,6 +84,15 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
 
+  const advance = () => {
+    if (isLast) {
+      onDone();
+    } else {
+      setVisible(false);
+      setTimeout(() => setStep((s) => s + 1), 220);
+    }
+  };
+
   useEffect(() => {
     setVisible(false);
     const run = () => {
@@ -100,14 +107,48 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
     return () => clearTimeout(t);
   }, [step, current.target, current.pad]);
 
-  const next = () => {
-    if (isLast) {
-      onDone();
-    } else {
-      setVisible(false);
-      setTimeout(() => setStep((s) => s + 1), 220);
-    }
-  };
+  useEffect(() => {
+    const el = document.querySelector(current.target);
+    if (!el) return;
+
+    let startX: number | null = null;
+    let startY: number | null = null;
+
+    const closeOpenedSurface = () => {
+      if (step === 0) document.dispatchEvent(new Event("close-add-modal"));
+      if (step === 3) document.dispatchEvent(new Event("close-household-dialog"));
+      if (step === 4) document.dispatchEvent(new Event("close-shopping-list"));
+    };
+
+    const handleClick = () => {
+      if (step === 1) return;
+      closeOpenedSurface();
+      advance();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      startX = event.clientX;
+      startY = event.clientY;
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (step !== 1 || startX === null || startY === null) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      startX = null;
+      startY = null;
+      if (dx < -50 && Math.abs(dx) > Math.abs(dy) * 0.7) advance();
+    };
+
+    el.addEventListener("click", handleClick);
+    el.addEventListener("pointerdown", handlePointerDown);
+    el.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      el.removeEventListener("click", handleClick);
+      el.removeEventListener("pointerdown", handlePointerDown);
+      el.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [advance, current.target, step]);
 
   if (!rect) return null;
 
@@ -120,9 +161,6 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
 
   return (
     <>
-      {/* Interaction blocker */}
-      <div className="fixed inset-0 z-[59]" />
-
       {/* SVG spotlight overlay */}
       <div
         className={`fixed inset-0 z-[60] pointer-events-none transition-opacity duration-300 ${
@@ -188,22 +226,9 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
             >
               Overslaan
             </button>
-            <button
-              onClick={next}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 active:scale-[.97] transition-all"
-            >
-              {isLast ? (
-                <>
-                  <Refrigerator className="w-4 h-4" />
-                  Klaar!
-                </>
-              ) : (
-                <>
-                  Volgende
-                  <ChevronRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            <p className="text-sm font-semibold text-primary text-right">
+              {isLast ? "Tik om af te ronden" : "Voer de actie hierboven uit"}
+            </p>
           </div>
         </div>
       </div>

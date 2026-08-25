@@ -43,7 +43,7 @@ interface ProductsContextValue {
   undo: () => void;
   redo: () => void;
   refetch: () => Promise<void>;
-  createProduct: (data: CreateInput) => Promise<void>;
+  createProduct: (data: CreateInput) => Promise<number>;
   updateProduct: (id: number, data: UpdateInput) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
 }
@@ -186,7 +186,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(data),
       });
       setProducts((prev) => prev.map((p) => (p.id === tempId ? saved : p)), false);
-    } catch {}
+      return saved.id;
+    } catch {
+      return tempId;
+    }
   }, [setProducts, householdId]);
 
   const updateProduct = useCallback(async (id: number, data: UpdateInput) => {

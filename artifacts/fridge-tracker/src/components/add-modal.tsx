@@ -23,8 +23,13 @@ export function AddModal() {
 
   useEffect(() => {
     const handler = () => setOpen(true);
+    const closeHandler = () => resetAndClose();
     document.addEventListener("open-add-modal", handler);
-    return () => document.removeEventListener("open-add-modal", handler);
+    document.addEventListener("close-add-modal", closeHandler);
+    return () => {
+      document.removeEventListener("open-add-modal", handler);
+      document.removeEventListener("close-add-modal", closeHandler);
+    };
   }, []);
 
   const resetAndClose = () => {

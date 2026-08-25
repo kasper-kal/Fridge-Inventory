@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Trash2, Plus, X, Check, Share2, Users, RefreshCw } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,12 @@ export function ShoppingListDrawer() {
   const { household } = useHousehold();
   const [open, setOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
+
+  useEffect(() => {
+    const closeHandler = () => setOpen(false);
+    document.addEventListener("close-shopping-list", closeHandler);
+    return () => document.removeEventListener("close-shopping-list", closeHandler);
+  }, []);
 
   const handleOpen = (v: boolean) => {
     setOpen(v);

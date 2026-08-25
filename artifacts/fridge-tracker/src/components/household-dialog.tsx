@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Users, Plus, LogIn, LogOut, Home, Eye, EyeOff, QrCode, ScanLine, Trash2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,12 @@ export function HouseholdDialog() {
   const [showQR, setShowQR] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    const closeHandler = () => setOpen(false);
+    document.addEventListener("close-household-dialog", closeHandler);
+    return () => document.removeEventListener("close-household-dialog", closeHandler);
+  }, []);
 
   const reset = () => {
     setName("");
