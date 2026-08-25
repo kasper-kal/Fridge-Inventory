@@ -8,7 +8,7 @@ import { ShoppingListProvider } from "@/context/shopping-list-context";
 import { UserProvider } from "@/context/user-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { useUser } from "@/context/user-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { hasSeenOnboarding, OnboardingSlides } from "@/components/onboarding-slides";
 import { UndoRedoBar } from "@/components/undo-redo-bar";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -50,14 +50,19 @@ function Router() {
 }
 
 function AppInner() {
-  const { isBanned } = useUser();
+  const { isBanned, isRegistered } = useUser();
 
   const [phase, setPhase] = useState<"none" | "story" | "tour" | "setup" | "done">(() => {
-    if (localStorage.getItem("fridge_device_id")) return "done";
     if (!hasSeenOnboarding()) return "story";
     if (!localStorage.getItem(TOUR_SEEN_KEY)) return "tour";
-    return "setup";
+    return "none";
   });
+
+  useEffect(() => {
+    if (phase === "none") {
+      setPhase(isRegistered ? "done" : "setup");
+    }
+  }, [isRegistered, phase]);
 
   if (isBanned) return <BannedScreen />;
 
