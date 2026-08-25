@@ -2,6 +2,11 @@ import { useState } from "react";
 import { ShoppingCart, Refrigerator, ChevronRight } from "lucide-react";
 
 const STORY_KEY = "fridge_onboarding_seen";
+export const ONBOARDING_RESTART_EVENT = "restart-onboarding";
+
+export function requestOnboardingReplay() {
+  document.dispatchEvent(new Event(ONBOARDING_RESTART_EVENT));
+}
 
 export function hasSeenOnboarding() {
   return !!localStorage.getItem(STORY_KEY);

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { useShoppingList } from "@/context/shopping-list-context";
 import { useHousehold } from "@/context/household-context";
 import { toast } from "sonner";
-import { signalTourAction } from "@/components/tour";
 
 export function ShoppingListDrawer() {
   const { items, isShared, setShared, addItem, toggleItem, removeItem, clearChecked, clearAll, count, isSyncing, refresh } = useShoppingList();
@@ -61,7 +60,7 @@ export function ShoppingListDrawer() {
   return (
     <Drawer open={open} onOpenChange={handleOpen}>
       <DrawerTrigger asChild>
-        <button onClick={() => signalTourAction("shopping")} className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+        <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
           <ShoppingCart className="w-6 h-6 text-foreground" />
           {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">

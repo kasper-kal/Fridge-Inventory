@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout";
 import { useUser } from "@/context/user-context";
 import { useHousehold } from "@/context/household-context";
 import { toast } from "sonner";
+import { requestOnboardingReplay } from "@/components/onboarding-slides";
 
 export default function AccountPage() {
   const { user, deviceId, updateUsername } = useUser();
@@ -130,6 +131,14 @@ export default function AccountPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </Link>
+          <button
+            onClick={requestOnboardingReplay}
+            className="w-full flex items-center gap-3 px-5 py-4 hover:bg-secondary/30 transition-colors"
+          >
+            <BookOpen className="w-5 h-5 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-left">Rondleiding opnieuw bekijken</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
           <Link href="/terms">
             <button className="w-full flex items-center gap-3 px-5 py-4 hover:bg-secondary/30 transition-colors">
               <FileText className="w-5 h-5 text-muted-foreground" />

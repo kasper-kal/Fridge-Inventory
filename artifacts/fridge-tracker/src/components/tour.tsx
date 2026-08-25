@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const TOUR_SEEN_KEY = "fridge_tour_seen";
-export type TourAction = "add" | "swipe" | "nav" | "household" | "shopping" | "account";
+export type TourAction = "add" | "product-created" | "swipe" | "add-closed";
 
 export function signalTourAction(action: TourAction) {
   document.dispatchEvent(new CustomEvent("tour-action", { detail: action }));
@@ -12,7 +12,7 @@ const STEPS = [
     target: '[data-tour="add-button"]',
     action: "add" as TourAction,
     title: "Producten toevoegen",
-    description: "Tik op de + knop om het toevoegmenu te openen. Daarna gaat de uitleg vanzelf verder.",
+    description: "Tik op de + knop. Voeg daarna zelf een product toe; dat wordt meteen je eerste echte product.",
     pad: 18,
     tooltipBelow: false,
   },
@@ -21,45 +21,9 @@ const STEPS = [
     action: "swipe" as TourAction,
     title: "Probeer een veegactie",
     description:
-      "Veeg het voorbeeldproduct ‘Probeer mij uit’ naar links. Kies daarna een actie om de veegbediening te testen.",
+      "Veeg je nieuwe product naar links om de beschikbare acties te zien.",
     pad: 12,
     tooltipBelow: false,
-  },
-  {
-    target: '[data-tour="bottom-nav-tabs"]',
-    action: "nav" as TourAction,
-    title: "Drie opslagplekken",
-    description:
-      "Tik op een van de tabs onderin om tussen je koelkast, voorraadkast en vriezer te navigeren.",
-    pad: 10,
-    tooltipBelow: false,
-  },
-  {
-    target: '[data-tour="household-button"]',
-    action: "household" as TourAction,
-    title: "Deel met huisgenoten",
-    description:
-      "Tik op het huisgenoten-icoon om te zien waar je een huishouden aanmaakt. De uitleg gaat daarna vanzelf verder.",
-    pad: 10,
-    tooltipBelow: true,
-  },
-  {
-    target: '[data-tour="shopping-list-button"]',
-    action: "shopping" as TourAction,
-    title: "Boodschappenlijst",
-    description:
-      "Tik op het winkelwagen-icoon om je boodschappenlijst te openen.",
-    pad: 10,
-    tooltipBelow: true,
-  },
-  {
-    target: '[data-tour="account-button"]',
-    action: "account" as TourAction,
-    title: "Jouw profiel",
-    description:
-      "Tik op je profiel om je account en de gebruikersaanwijzing te vinden. Daarna ben je klaar.",
-    pad: 10,
-    tooltipBelow: true,
   },
 ];
 
@@ -87,22 +51,11 @@ function measure(selector: string, pad: number): Rect | null {
   };
 }
 
-export function TourOverlay({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState(0);
+export function TourOverlay({ onDone, mode }: { onDone: () => void; mode: "add" | "swipe" }) {
   const [rect, setRect] = useState<Rect | null>(null);
   const [visible, setVisible] = useState(false);
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-
-  const advance = () => {
-    if (isLast) {
-      onDone();
-    } else {
-      setVisible(false);
-      setTimeout(() => setStep((s) => s + 1), 220);
-    }
-  };
+  const current = mode === "add" ? STEPS[0] : STEPS[1];
 
   useEffect(() => {
     setVisible(false);
@@ -116,23 +69,18 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
     run();
     const t = setTimeout(run, 150);
     return () => clearTimeout(t);
-  }, [step, current.target, current.pad]);
+  }, [mode, current.target, current.pad]);
 
   useEffect(() => {
-    const closeOpenedSurface = (action: TourAction) => {
-      if (step === 0) document.dispatchEvent(new Event("close-add-modal"));
-      if (step === 3) document.dispatchEvent(new Event("close-household-dialog"));
-      if (step === 4) document.dispatchEvent(new Event("close-shopping-list"));
-    };
     const handleAction = (event: Event) => {
       const action = (event as CustomEvent<TourAction>).detail;
       if (action !== current.action) return;
-      closeOpenedSurface(action);
-      advance();
+      if (mode === "add") return;
+      onDone();
     };
     document.addEventListener("tour-action", handleAction);
     return () => document.removeEventListener("tour-action", handleAction);
-  }, [current.action, step]);
+  }, [current.action, mode, onDone]);
 
   if (!rect) return null;
 
@@ -186,19 +134,23 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
       >
         <div className="bg-card rounded-3xl p-5 shadow-2xl border border-border max-w-[360px] mx-auto">
           {/* Progress */}
-          <div className="flex gap-1.5 mb-4">
+            <div className="flex gap-1.5 mb-4">
             {STEPS.map((_, i) => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === step ? "w-6 bg-primary" : i < step ? "w-1.5 bg-primary/35" : "w-1.5 bg-border"
+                  (mode === "add" && i === 0) || (mode === "swipe" && i === 1)
+                    ? "w-6 bg-primary"
+                    : i < (mode === "swipe" ? 1 : 0)
+                      ? "w-1.5 bg-primary/35"
+                      : "w-1.5 bg-border"
                 }`}
               />
             ))}
           </div>
 
           <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
-            Stap {step + 1} van {STEPS.length}
+            {mode === "add" ? "Eerst dit" : "Daarna dit"}
           </p>
           <h3 className="font-bold text-lg text-foreground mb-1.5">{current.title}</h3>
           <p className="text-sm text-muted-foreground leading-relaxed mb-4">{current.description}</p>
@@ -211,7 +163,7 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
               Overslaan
             </button>
             <p className="text-sm font-semibold text-primary text-right">
-              Voer de actie hierboven uit
+              {mode === "add" ? "Voeg je eerste product toe" : "Veeg naar links om verder te gaan"}
             </p>
           </div>
         </div>

@@ -8,7 +8,6 @@ import { useUser } from "@/context/user-context";
 import { CameraScanner } from "@/components/camera-scanner";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
-import { signalTourAction } from "@/components/tour";
 
 function apiUrl(path: string) {
   const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
@@ -147,7 +146,7 @@ export function HouseholdDialog() {
   return (
     <Drawer open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DrawerTrigger asChild>
-        <button onClick={() => signalTourAction("household")} className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+        <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
           <Users className="w-6 h-6 text-foreground" />
           {household && (
             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />

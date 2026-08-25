@@ -20,21 +20,21 @@ export function BottomNav() {
 
       <div className="flex items-center justify-around h-20 px-4" data-tour="bottom-nav-tabs">
         <Link href="/">
-          <div onClick={() => signalTourAction("nav")} className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/")}`}>
             <Refrigerator className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Koelkast</span>
           </div>
         </Link>
 
         <Link href="/pantry">
-          <div onClick={() => signalTourAction("nav")} className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/pantry")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/pantry")}`}>
             <Package className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Voorraad</span>
           </div>
         </Link>
 
         <Link href="/freezer">
-          <div onClick={() => signalTourAction("nav")} className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/freezer")}`}>
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/freezer")}`}>
             <Snowflake className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium tracking-wide">Vriezer</span>
           </div>

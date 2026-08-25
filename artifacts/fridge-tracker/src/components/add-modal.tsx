@@ -10,6 +10,7 @@ import { useProducts } from "@/context/products-context";
 import { UnitSelect } from "@/components/unit-select";
 import { CameraScanner } from "@/components/camera-scanner";
 import { toast } from "sonner";
+import { signalTourAction } from "@/components/tour";
 import Tesseract from "tesseract.js";
 
 type View = "menu" | "manual" | "scan" | "barcode";
@@ -34,6 +35,7 @@ export function AddModal() {
 
   const resetAndClose = () => {
     setOpen(false);
+    signalTourAction("add-closed");
     setTimeout(() => { setView("menu"); setPrefillName(""); setPrefillLocation("fridge"); }, 300);
   };
 
@@ -267,6 +269,7 @@ function ManualAddFlow({
     setSaving(false);
     toast.success(`${name.trim()} toegevoegd aan ${locationLabel}`);
     onClose();
+    signalTourAction("product-created");
   };
 
   return (

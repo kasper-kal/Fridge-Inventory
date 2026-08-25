@@ -7,7 +7,6 @@ import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
 import { HouseholdDialog } from "@/components/household-dialog";
 import { Link } from "wouter";
 import { Refrigerator, Users, UserCircle } from "lucide-react";
-import { signalTourAction } from "@/components/tour";
 
 export default function FridgePage() {
   const { fridgeProducts, isLoading, refetch } = useProducts();
@@ -31,7 +30,7 @@ export default function FridgePage() {
             )}
           </div>
           <div className="mt-2 flex items-center gap-1">
-            <Link href="/account" data-tour="account-button" onClick={() => signalTourAction("account")}>
+            <Link href="/account" data-tour="account-button">
               <button className="p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
                 <UserCircle className="w-6 h-6 text-foreground" />
               </button>
