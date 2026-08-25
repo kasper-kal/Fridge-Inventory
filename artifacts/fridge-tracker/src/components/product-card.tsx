@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UnitSelect } from "@/components/unit-select";
 import { haptic } from "@/lib/haptics";
+import { signalTourAction } from "@/components/tour";
 
 const SWIPE_THRESHOLD = 60;
 const BTN_W = 68;
@@ -134,6 +135,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
       if (swipeOffset < -SWIPE_THRESHOLD) {
         haptic(8);
         setSwiped(true); setSwipeOffset(-SWIPE_REVEAL);
+        signalTourAction("swipe");
       } else {
         setSwiped(false); setSwipeOffset(0);
       }

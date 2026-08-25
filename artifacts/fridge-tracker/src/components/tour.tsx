@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 
 export const TOUR_SEEN_KEY = "fridge_tour_seen";
+export type TourAction = "add" | "swipe" | "nav" | "household" | "shopping" | "account";
+
+export function signalTourAction(action: TourAction) {
+  document.dispatchEvent(new CustomEvent("tour-action", { detail: action }));
+}
 
 const STEPS = [
   {
     target: '[data-tour="add-button"]',
+    action: "add" as TourAction,
     title: "Producten toevoegen",
     description: "Tik op de + knop om het toevoegmenu te openen. Daarna gaat de uitleg vanzelf verder.",
     pad: 18,
@@ -12,6 +18,7 @@ const STEPS = [
   },
   {
     target: '[data-tour="product-list"]',
+    action: "swipe" as TourAction,
     title: "Probeer een veegactie",
     description:
       "Veeg het voorbeeldproduct ‘Probeer mij uit’ naar links. Kies daarna een actie om de veegbediening te testen.",
@@ -20,6 +27,7 @@ const STEPS = [
   },
   {
     target: '[data-tour="bottom-nav-tabs"]',
+    action: "nav" as TourAction,
     title: "Drie opslagplekken",
     description:
       "Tik op een van de tabs onderin om tussen je koelkast, voorraadkast en vriezer te navigeren.",
@@ -28,6 +36,7 @@ const STEPS = [
   },
   {
     target: '[data-tour="household-button"]',
+    action: "household" as TourAction,
     title: "Deel met huisgenoten",
     description:
       "Tik op het huisgenoten-icoon om te zien waar je een huishouden aanmaakt. De uitleg gaat daarna vanzelf verder.",
@@ -36,6 +45,7 @@ const STEPS = [
   },
   {
     target: '[data-tour="shopping-list-button"]',
+    action: "shopping" as TourAction,
     title: "Boodschappenlijst",
     description:
       "Tik op het winkelwagen-icoon om je boodschappenlijst te openen.",
@@ -44,6 +54,7 @@ const STEPS = [
   },
   {
     target: '[data-tour="account-button"]',
+    action: "account" as TourAction,
     title: "Jouw profiel",
     description:
       "Tik op je profiel om je account en de gebruikersaanwijzing te vinden. Daarna ben je klaar.",
@@ -108,47 +119,20 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
   }, [step, current.target, current.pad]);
 
   useEffect(() => {
-    const el = document.querySelector(current.target);
-    if (!el) return;
-
-    let startX: number | null = null;
-    let startY: number | null = null;
-
-    const closeOpenedSurface = () => {
+    const closeOpenedSurface = (action: TourAction) => {
       if (step === 0) document.dispatchEvent(new Event("close-add-modal"));
       if (step === 3) document.dispatchEvent(new Event("close-household-dialog"));
       if (step === 4) document.dispatchEvent(new Event("close-shopping-list"));
     };
-
-    const handleClick = () => {
-      if (step === 1) return;
-      closeOpenedSurface();
+    const handleAction = (event: Event) => {
+      const action = (event as CustomEvent<TourAction>).detail;
+      if (action !== current.action) return;
+      closeOpenedSurface(action);
       advance();
     };
-
-    const handlePointerDown = (event: PointerEvent) => {
-      startX = event.clientX;
-      startY = event.clientY;
-    };
-
-    const handlePointerUp = (event: PointerEvent) => {
-      if (step !== 1 || startX === null || startY === null) return;
-      const dx = event.clientX - startX;
-      const dy = event.clientY - startY;
-      startX = null;
-      startY = null;
-      if (dx < -50 && Math.abs(dx) > Math.abs(dy) * 0.7) advance();
-    };
-
-    el.addEventListener("click", handleClick);
-    el.addEventListener("pointerdown", handlePointerDown);
-    el.addEventListener("pointerup", handlePointerUp);
-    return () => {
-      el.removeEventListener("click", handleClick);
-      el.removeEventListener("pointerdown", handlePointerDown);
-      el.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [advance, current.target, step]);
+    document.addEventListener("tour-action", handleAction);
+    return () => document.removeEventListener("tour-action", handleAction);
+  }, [current.action, step]);
 
   if (!rect) return null;
 
@@ -227,7 +211,7 @@ export function TourOverlay({ onDone }: { onDone: () => void }) {
               Overslaan
             </button>
             <p className="text-sm font-semibold text-primary text-right">
-              {isLast ? "Tik om af te ronden" : "Voer de actie hierboven uit"}
+              Voer de actie hierboven uit
             </p>
           </div>
         </div>
