@@ -21,21 +21,29 @@ export function AddModal() {
   const [view, setView] = useState<View>("menu");
   const [prefillName, setPrefillName] = useState("");
   const [prefillLocation, setPrefillLocation] = useState<StorageLocation>("fridge");
+  const [tutorialActive, setTutorialActive] = useState(false);
 
   useEffect(() => {
     const handler = () => setOpen(true);
     const closeHandler = () => resetAndClose();
+    const tutorialHandler = (event: Event) => {
+      const action = (event as CustomEvent<string>).detail;
+      if (action === "add") setTutorialActive(true);
+      if (action === "product-created" || action === "add-closed") setTutorialActive(false);
+    };
     document.addEventListener("open-add-modal", handler);
     document.addEventListener("close-add-modal", closeHandler);
+    document.addEventListener("tour-action", tutorialHandler);
     return () => {
       document.removeEventListener("open-add-modal", handler);
       document.removeEventListener("close-add-modal", closeHandler);
+      document.removeEventListener("tour-action", tutorialHandler);
     };
   }, []);
 
-  const resetAndClose = () => {
+  const resetAndClose = (tutorialCompleted = false) => {
     setOpen(false);
-    signalTourAction("add-closed");
+    if (!tutorialCompleted) signalTourAction("add-closed");
     setTimeout(() => { setView("menu"); setPrefillName(""); setPrefillLocation("fridge"); }, 300);
   };
 
@@ -46,7 +54,13 @@ export function AddModal() {
   }, []);
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen && tutorialActive) signalTourAction("add-closed");
+      }}
+    >
       <DrawerTrigger asChild>
         <Button
           size="icon"
@@ -58,6 +72,15 @@ export function AddModal() {
       <DrawerContent className="bg-card px-6 pb-safe pt-2 border-t border-card-border rounded-t-3xl h-[85vh] max-h-[800px] outline-none">
         <DrawerTitle className="sr-only">Item toevoegen</DrawerTitle>
         <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
+
+        {tutorialActive && (
+          <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+            <p className="font-semibold text-sm text-foreground">Voeg je eerste product toe</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Kies hieronder een manier. Deze uitleg blijft staan terwijl je je product toevoegt.
+            </p>
+          </div>
+        )}
 
         {view === "menu" && (
           <MenuView onScan={() => setView("scan")} onManual={() => goToManual()} onBarcode={() => setView("barcode")} />
@@ -239,7 +262,7 @@ function ManualAddFlow({
   prefillName = "",
   prefillLocation = "fridge",
 }: {
-  onClose: () => void;
+  onClose: (tutorialCompleted?: boolean) => void;
   onBack: () => void;
   prefillName?: string;
   prefillLocation?: StorageLocation;
@@ -268,8 +291,8 @@ function ManualAddFlow({
     });
     setSaving(false);
     toast.success(`${name.trim()} toegevoegd aan ${locationLabel}`);
-    onClose();
     signalTourAction("product-created");
+    onClose(true);
   };
 
   return (
@@ -372,7 +395,7 @@ function ManualAddFlow({
   );
 }
 
-function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () => void }) {
+function ScanReceiptFlow({ onClose, onBack }: { onClose: (tutorialCompleted?: boolean) => void; onBack: () => void }) {
   const [step, setStep] = useState<"upload" | "ocr" | "api" | "confirm">("upload");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [parsedItems, setParsedItems] = useState<
@@ -440,7 +463,8 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
     const names = parsedItems.slice(0, 2).map(i => i.name).join(", ");
     const extra = parsedItems.length > 2 ? ` en ${parsedItems.length - 2} meer` : "";
     toast.success(`${names}${extra} toegevoegd`);
-    onClose();
+    signalTourAction("product-created");
+    onClose(true);
   };
 
   const updateItem = (index: number, field: string, value: string | number) => {

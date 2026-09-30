@@ -1,0 +1,1 @@
+- [Onboarding in drawers](onboarding-drawers.md) — keep guidance inside portal-based drawers and advance only after the requested action completes.
