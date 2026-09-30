@@ -49,15 +49,11 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
   const closeSwipe = () => { setSwiped(false); setSwipeOffset(0); };
 
-  const handleAddToList = useCallback(async () => {
+  const handleAddToList = useCallback(() => {
     haptic(12);
-    try {
-      await addItem(product.name);
-      toast.success(`${product.name} op boodschappenlijst`);
-      closeSwipe();
-    } catch {
-      toast.error("Toevoegen aan de boodschappenlijst is niet gelukt.");
-    }
+    addItem(product.name);
+    toast.success(`${product.name} op boodschappenlijst`);
+    closeSwipe();
   }, [addItem, product.name]);
 
   function stepForUnit(unit: string): number {
@@ -70,67 +66,38 @@ export function ProductCard({ product }: { product: LocalProduct }) {
     }
   }
 
-  const adjustQuantity = useCallback(async (delta: number) => {
+  const adjustQuantity = useCallback((delta: number) => {
     haptic(6);
     const step = stepForUnit(product.unit);
     const next = Math.max(0, Math.round((product.quantity + delta * step) * 100) / 100);
-    setPending(true);
-    try {
-      await updateProduct(product.id, { quantity: next });
-    } catch {
-      toast.error("Hoeveelheid niet opgeslagen. Probeer het opnieuw.");
-    } finally {
-      setPending(false);
-    }
+    updateProduct(product.id, { quantity: next });
   }, [product.id, product.quantity, product.unit, updateProduct]);
 
   const handleMove = useCallback(async (dest: Location, label: string) => {
     haptic(12);
     setPending(true);
-    try {
-      await updateProduct(product.id, { storageLocation: dest });
-      toast.success(`${product.name} verplaatst naar ${label.toLowerCase()}`);
-      closeSwipe();
-    } catch {
-      toast.error("Verplaatsen niet opgeslagen. Probeer het opnieuw.");
-    } finally {
-      setPending(false);
-    }
+    await updateProduct(product.id, { storageLocation: dest });
+    setPending(false);
+    toast.success(`${product.name} verplaatst naar ${label.toLowerCase()}`);
+    closeSwipe();
   }, [product.id, product.name, updateProduct]);
 
   const handleDelete = useCallback(async () => {
     haptic([10, 50, 20]);
-    setPending(true);
-    try {
-      await deleteProduct(product.id);
-      toast.success(`${product.name} verwijderd`);
-    } catch {
-      toast.error("Verwijderen niet gelukt. Het product staat nog in je voorraad.");
-      setPending(false);
-    }
+    await deleteProduct(product.id);
+    toast.success(`${product.name} verwijderd`);
   }, [product.id, product.name, deleteProduct]);
 
   const handleSave = useCallback(async () => {
-    const trimmedName = editName.trim();
-    const parsedQuantity = Number(editQuantity);
-    if (!trimmedName || !Number.isFinite(parsedQuantity) || parsedQuantity < 0) {
-      toast.error("Vul een productnaam en een geldige hoeveelheid in.");
-      return;
-    }
     setPending(true);
-    try {
-      await updateProduct(product.id, {
-        name: trimmedName,
-        quantity: parsedQuantity,
-        unit: editUnit,
-      });
-      setIsEditing(false);
-      toast.success(`${trimmedName} bijgewerkt`);
-    } catch {
-      toast.error("Wijziging niet opgeslagen. Probeer het opnieuw.");
-    } finally {
-      setPending(false);
-    }
+    await updateProduct(product.id, {
+      name: editName,
+      quantity: parseFloat(editQuantity) || 0,
+      unit: editUnit,
+    });
+    setPending(false);
+    setIsEditing(false);
+    toast.success(`${editName} bijgewerkt`);
   }, [product.id, editName, editQuantity, editUnit, updateProduct]);
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -181,7 +148,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
   if (isEditing) {
     return (
-      <div className="bg-card rounded-2xl p-4 border border-card-border shadow-sm flex flex-col gap-3">
+      <div className="bg-card rounded-2xl p-4 border shadow-sm flex flex-col gap-3">
         <Input
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
@@ -217,7 +184,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
       <div className="absolute inset-y-0 right-0 flex items-stretch">
         {/* 1. Boodschappenlijst */}
         <button
-          aria-label={`${product.name} op boodschappenlijst zetten`}
           onClick={handleAddToList}
           style={{ width: BTN_W }}
           className="flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white text-[10px] font-semibold active:brightness-90 transition-all"
@@ -230,7 +196,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
         {targets.map(({ dest, label, Icon, bg }) => (
           <button
             key={dest}
-            aria-label={`${product.name} verplaatsen naar ${label}`}
             onClick={() => handleMove(dest, label)}
             disabled={pending}
             style={{ width: BTN_W }}
@@ -243,7 +208,6 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
         {/* 4. Verwijder */}
         <button
-          aria-label={`${product.name} verwijderen`}
           onClick={handleDelete}
           disabled={pending}
           style={{ width: BTN_W }}
@@ -256,7 +220,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
       {/* Card face */}
       <div
-        className="relative bg-card border border-card-border shadow-sm rounded-2xl flex items-center justify-between"
+        className="relative bg-card border shadow-sm rounded-2xl flex items-center justify-between"
         style={{
           transform: `translateX(${swipeOffset}px)`,
           transition: dragging.current ? "none" : "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
@@ -266,30 +230,29 @@ export function ProductCard({ product }: { product: LocalProduct }) {
         onTouchEnd={onTouchEnd}
       >
         {swiped && (
-          <button type="button" aria-label="Acties sluiten" className="absolute inset-0 z-10 rounded-2xl" onClick={closeSwipe} />
+          <div className="absolute inset-0 z-10 rounded-2xl" onClick={closeSwipe} />
         )}
 
         {/* Name + date — tap to edit */}
-        <button
-          type="button"
-          aria-label={`${product.name} bewerken`}
-          className="flex flex-1 min-w-0 flex-col py-3.5 pl-4 pr-1 text-left active:opacity-70 transition-opacity"
+        <div
+          className="flex-1 min-w-0 py-3.5 pl-4 pr-1 cursor-pointer active:opacity-70 transition-opacity"
           onClick={() => { if (!swiped) setIsEditing(true); else closeSwipe(); }}
         >
-          <span className="w-full truncate font-semibold text-lg text-card-foreground">{product.name}</span>
-          <span className="flex items-center gap-2 mt-0.5">
-            <span className="text-sm font-medium text-muted-foreground">{product.unit}</span>
-            {dateLabel && <span className="text-xs text-muted-foreground/70">Toegevoegd {dateLabel}</span>}
-          </span>
-        </button>
+          <h3 className="font-semibold text-lg text-card-foreground truncate">{product.name}</h3>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-sm font-medium text-muted-foreground">{product.unit}</p>
+            {dateLabel && (
+              <p className="text-xs text-muted-foreground/50">· {dateLabel}</p>
+            )}
+          </div>
+        </div>
 
         {/* +/– quantity control */}
         <div className="flex items-center gap-1 pr-3 py-3.5 shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); if (swiped) { closeSwipe(); return; } adjustQuantity(-1); }}
-            disabled={pending || product.quantity <= 0}
-            aria-label={`${product.name} verminderen`}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all disabled:opacity-30"
+            disabled={product.quantity <= 0}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all disabled:opacity-30"
           >
             <Minus className="w-4 h-4" />
           </button>
@@ -300,9 +263,7 @@ export function ProductCard({ product }: { product: LocalProduct }) {
 
           <button
             onClick={(e) => { e.stopPropagation(); if (swiped) { closeSwipe(); return; } adjustQuantity(1); }}
-            disabled={pending}
-            aria-label={`${product.name} verhogen`}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary active:scale-90 transition-all"
           >
             <Plus className="w-4 h-4" />
           </button>

@@ -10,7 +10,6 @@ import { toast } from "sonner";
 export function ShoppingListDrawer() {
   const { items, isShared, setShared, addItem, toggleItem, removeItem, clearChecked, clearAll, count, isSyncing, refresh } = useShoppingList();
   const { household } = useHousehold();
-  const { syncError } = useShoppingList();
   const [open, setOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
 
@@ -25,40 +24,18 @@ export function ShoppingListDrawer() {
     if (v) refresh();
   };
 
-  const handleAdd = async () => {
+  const handleAdd = () => {
     const name = newItem.trim();
     if (!name) return;
-    try {
-      await addItem(name);
-      setNewItem("");
-      toast.success(`${name} toegevoegd`);
-    } catch {
-      toast.error("Item niet toegevoegd. Controleer je verbinding en probeer het opnieuw.");
-    }
-  };
-
-  const handleToggle = (id: string) => {
-    void toggleItem(id).catch(() => toast.error("Wijziging niet opgeslagen."));
-  };
-
-  const handleRemove = (id: string) => {
-    void removeItem(id).catch(() => toast.error("Item niet verwijderd."));
-  };
-
-  const handleClearChecked = () => {
-    void clearChecked().catch(() => toast.error("Afgevinkte items niet verwijderd."));
-  };
-
-  const handleClearAll = () => {
-    if (!window.confirm("Weet je zeker dat je de hele boodschappenlijst wilt wissen?")) return;
-    void clearAll().catch(() => toast.error("De boodschappenlijst is niet gewist."));
+    addItem(name);
+    setNewItem("");
   };
 
   const handleShare = () => {
     const unchecked = items.filter((i) => !i.checked).map((i) => `• ${i.name}`).join("\n");
     const checked   = items.filter((i) =>  i.checked).map((i) => `✓ ${i.name}`).join("\n");
     const text = [
-      "Boodschappenlijst",
+      "🛒 Boodschappenlijst",
       unchecked,
       checked ? `\nAl in huis:\n${checked}` : "",
     ].filter(Boolean).join("\n");
@@ -83,7 +60,7 @@ export function ShoppingListDrawer() {
   return (
     <Drawer open={open} onOpenChange={handleOpen}>
       <DrawerTrigger asChild>
-        <button aria-label="Boodschappenlijst openen" data-testid="button-shopping-list" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border/80 bg-card/80 hover:bg-card transition-colors active:scale-95">
+        <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
           <ShoppingCart className="w-6 h-6 text-foreground" />
           {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -93,7 +70,7 @@ export function ShoppingListDrawer() {
         </button>
       </DrawerTrigger>
 
-      <DrawerContent className="mx-auto flex max-h-[88dvh] max-w-[560px] flex-col rounded-t-[2rem] border-border bg-card">
+      <DrawerContent className="max-w-[430px] mx-auto max-h-[85dvh] flex flex-col">
         <DrawerTitle className="sr-only">Boodschappenlijst</DrawerTitle>
 
         {/* Header */}
@@ -109,15 +86,15 @@ export function ShoppingListDrawer() {
           <div className="flex gap-1">
             {items.length > 0 && (
               <>
-                <button onClick={handleShare} aria-label="Boodschappenlijst delen" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Delen">
+                <button onClick={handleShare} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Delen">
                   <Share2 className="w-4 h-4" />
                 </button>
                 {checkedCount > 0 && (
-                <button onClick={handleClearChecked} aria-label="Afgevinkte items verwijderen" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Afgevinkte verwijderen">
+                  <button onClick={clearChecked} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground" title="Afgevinkte verwijderen">
                     <Check className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={handleClearAll} aria-label="Boodschappenlijst wissen" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-destructive/10 transition-colors text-destructive" title="Alles wissen">
+                <button onClick={clearAll} className="p-2 rounded-full hover:bg-destructive/10 transition-colors text-destructive" title="Alles wissen">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
@@ -145,26 +122,16 @@ export function ShoppingListDrawer() {
           </button>
         )}
 
-        {syncError && isShared && (
-          <div role="alert" className="flex items-center justify-between gap-3 border-b border-destructive/15 bg-destructive/5 px-5 py-3 text-sm">
-            <p className="text-muted-foreground">{syncError}</p>
-            <Button variant="outline" size="sm" onClick={() => { void refresh(); }}>
-              Opnieuw
-            </Button>
-          </div>
-        )}
-
         {/* Add item */}
         <div className="flex gap-2 px-5 py-3 border-b shrink-0">
           <Input
-            aria-label="Nieuw boodschappenitem"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Item toevoegen..."
             className="flex-1"
           />
-          <Button size="icon" aria-label="Item toevoegen" onClick={handleAdd} disabled={!newItem.trim()} className="h-11 w-11">
+          <Button size="icon" onClick={handleAdd} disabled={!newItem.trim()}>
             <Plus className="w-4 h-4" />
           </Button>
         </div>
@@ -182,13 +149,13 @@ export function ShoppingListDrawer() {
           ) : (
             <>
               {items.filter((i) => !i.checked).map((item) => (
-                <ShoppingItemRow key={item.id} item={item} onToggle={handleToggle} onRemove={handleRemove} />
+                <ShoppingItemRow key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
               ))}
               {checkedCount > 0 && (
                 <>
                   <p className="text-xs text-muted-foreground font-medium pt-2 pb-1">Al in huis</p>
                   {items.filter((i) => i.checked).map((item) => (
-                    <ShoppingItemRow key={item.id} item={item} onToggle={handleToggle} onRemove={handleRemove} />
+                    <ShoppingItemRow key={item.id} item={item} onToggle={toggleItem} onRemove={removeItem} />
                   ))}
                 </>
               )}
@@ -211,8 +178,7 @@ function ShoppingItemRow({
 }) {
   return (
     <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${item.checked ? "bg-muted/50 border-transparent" : "bg-card border-border"}`}>
-              <button
-        aria-label={`${item.checked ? "Afvinken ongedaan maken voor" : "Afvinken"} ${item.name}`}
+      <button
         onClick={() => onToggle(item.id)}
         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
           item.checked ? "bg-primary border-primary" : "border-border hover:border-primary"
@@ -226,7 +192,6 @@ function ShoppingItemRow({
       </span>
 
       <button
-        aria-label={`${item.name} verwijderen`}
         onClick={() => onRemove(item.id)}
         className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground shrink-0"
       >

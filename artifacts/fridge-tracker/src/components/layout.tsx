@@ -120,7 +120,7 @@ export function Layout({ children, onRefresh }: LayoutProps) {
   const showIndicator = pullY > 8 || refreshing;
 
   return (
-    <div className="app-shell min-h-[100dvh] w-full max-w-[1080px] mx-auto bg-background/70 relative flex flex-col md:border-x md:border-border/60 md:shadow-[0_0_70px_-50px_rgba(31,54,43,.35)] overflow-hidden">
+    <div className="min-h-[100dvh] w-full max-w-[430px] mx-auto bg-background relative flex flex-col shadow-2xl overflow-hidden">
       <NetworkIndicator />
 
       {onRefresh && showIndicator && (
@@ -145,7 +145,7 @@ export function Layout({ children, onRefresh }: LayoutProps) {
 
       <main
         ref={mainRef}
-        className="flex-1 pb-28 overflow-y-auto custom-scrollbar"
+        className="flex-1 pb-24 overflow-y-auto custom-scrollbar"
         style={{
           paddingTop: showIndicator ? (refreshing ? PULL_THRESHOLD : pullY) : 0,
           transition:

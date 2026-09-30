@@ -1,8 +1,61 @@
 import { useProducts } from "@/context/products-context";
-import { Snowflake } from "lucide-react";
-import { InventoryPage } from "@/components/inventory-page";
+import { useHousehold } from "@/context/household-context";
+import { Layout } from "@/components/layout";
+import { SummaryStrip } from "@/components/summary-strip";
+import { ProductList, ProductListSkeleton } from "@/components/product-list";
+import { ShoppingListDrawer } from "@/components/shopping-list-drawer";
+import { HouseholdDialog } from "@/components/household-dialog";
+import { Link } from "wouter";
+import { Snowflake, Users, UserCircle } from "lucide-react";
 
 export default function FreezerPage() {
-  const { freezerProducts, isLoading, syncError, refetch } = useProducts();
-  return <InventoryPage title="Vriezer" description="Bewaar wat je later graag bij de hand hebt." products={freezerProducts} isLoading={isLoading} syncError={syncError} refetch={refetch} emptyTitle="Je vriezer is nog leeg" emptyMessage="Zet ingevroren producten hier neer, dan raak je ze niet uit het oog." icon={<Snowflake className="h-10 w-10 text-primary" />} />;
+  const { freezerProducts, isLoading, refetch } = useProducts();
+  const { household } = useHousehold();
+
+  return (
+    <Layout onRefresh={refetch}>
+      <div className="pt-12 pb-4 px-6 bg-gradient-to-b from-primary/5 to-transparent">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">Vriezer</h1>
+            {household ? (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                  <Users className="w-3.5 h-3.5" />
+                  {household.name}
+                </span>
+              </div>
+            ) : (
+              <p className="text-muted-foreground mt-1 font-medium">Overzicht van je diepvries.</p>
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-1">
+            <Link href="/account">
+              <button className="p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+                <UserCircle className="w-6 h-6 text-foreground" />
+              </button>
+            </Link>
+            <HouseholdDialog />
+            <ShoppingListDrawer />
+          </div>
+        </div>
+      </div>
+
+      <SummaryStrip />
+
+      <div className="px-6 pb-4">
+        {isLoading ? (
+          <ProductListSkeleton />
+        ) : (
+          <ProductList
+            products={freezerProducts}
+            emptyIcon={<Snowflake className="w-10 h-10 text-muted-foreground" />}
+            emptyTitle="Je vriezer is leeg"
+            emptyMessage="Bewaar hier producten voor de lange termijn. Tik op + om toe te voegen."
+            accentColor="text-primary"
+          />
+        )}
+      </div>
+    </Layout>
+  );
 }

@@ -84,8 +84,6 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
-            aria-label="Zoek producten"
-            data-testid="input-product-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Zoeken..."
@@ -93,9 +91,8 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
           />
           {search && (
             <button
-              aria-label="Zoekopdracht wissen"
               onClick={() => setSearch("")}
-              className="absolute right-1 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -105,10 +102,8 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
         {/* Sort dropdown */}
         <div className="relative">
           <button
-            aria-label={`Sorteren: ${currentSortLabel}`}
-            aria-expanded={sortOpen}
             onClick={() => setSortOpen(v => !v)}
-            className="h-11 px-3 rounded-xl bg-card border border-border/70 hover:border-primary/30 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all shrink-0"
+            className="h-11 px-3 rounded-xl bg-secondary/20 border border-transparent hover:border-input flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all shrink-0"
           >
             <ArrowUpDown className="w-4 h-4" />
             <span className="hidden sm:inline">{currentSortLabel}</span>
@@ -160,7 +155,7 @@ export function ProductList({ products, emptyIcon, emptyTitle, emptyMessage, acc
             </div>
           ))}
           {search && (
-            <p role="status" className="text-center text-xs text-muted-foreground pt-1">
+            <p className="text-center text-xs text-muted-foreground pt-1">
               {filtered.length} van {products.length} product{products.length !== 1 ? "en" : ""}
             </p>
           )}

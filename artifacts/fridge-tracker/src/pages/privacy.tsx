@@ -3,16 +3,17 @@ import { ChevronLeft } from "lucide-react";
 
 export default function PrivacyPage() {
   return (
-    <div className="page-enter min-h-[100dvh] bg-background px-5 pb-16 pt-7 sm:px-8 sm:pt-10">
-      <div className="mx-auto max-w-3xl">
-      <div className="mb-7 flex items-center gap-3">
-        <Link href="/account" aria-label="Terug naar account" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card hover:bg-secondary transition-colors">
-            <ChevronLeft className="h-5 w-5 text-foreground" />
+    <div className="min-h-screen bg-background px-6 pt-12 pb-16 max-w-[430px] mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/account">
+          <button className="p-2 rounded-full hover:bg-secondary transition-colors">
+            <ChevronLeft className="w-5 h-5 text-foreground" />
+          </button>
         </Link>
-        <div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-primary/70">Jouw gegevens</p><h1 className="app-title text-3xl text-foreground sm:text-4xl">Privacybeleid</h1></div>
+        <h1 className="text-2xl font-bold text-foreground">Privacybeleid</h1>
       </div>
 
-      <article className="surface-card space-y-6 rounded-[1.6rem] p-5 text-sm leading-relaxed sm:p-8">
+      <div className="space-y-5 text-sm text-foreground leading-relaxed">
         <p className="text-xs text-muted-foreground">Laatst bijgewerkt: juli 2026</p>
 
         <section className="space-y-2">
@@ -50,7 +51,6 @@ export default function PrivacyPage() {
           <h2 className="font-semibold text-base">6. Contact</h2>
           <p className="text-muted-foreground">Heb je vragen over dit privacybeleid? Neem contact op met de beheerder via de app.</p>
         </section>
-      </article>
       </div>
     </div>
   );

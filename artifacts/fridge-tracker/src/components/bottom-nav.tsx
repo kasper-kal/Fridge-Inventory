@@ -5,27 +5,41 @@ import { signalTourAction } from "./tour";
 
 export function BottomNav() {
   const [location] = useLocation();
-  const tabs = [
-    { path: "/", label: "Koelkast", Icon: Refrigerator },
-    { path: "/pantry", label: "Voorraad", Icon: Package },
-    { path: "/freezer", label: "Vriezer", Icon: Snowflake },
-  ];
+
+  const active = (path: string) =>
+    location === path ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground";
+
   return (
-    <nav aria-label="Voorraadlocaties" className="fixed bottom-0 left-1/2 z-50 w-full max-w-[1080px] -translate-x-1/2 border-t border-card-border bg-card/95 pb-safe shadow-[0_-8px_28px_-20px_rgba(33,51,41,.25)] backdrop-blur-md md:rounded-t-2xl">
-      <div className="absolute -top-12 left-1/2 -translate-x-1/2" data-tour="add-button">
-        <div onClick={() => signalTourAction("add")}><AddModal /></div>
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-card/95 backdrop-blur-md border-t border-card-border pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+      {/* Floating + above center */}
+      <div className="absolute left-1/2 -translate-x-1/2 -top-12" data-tour="add-button">
+        <div onClick={() => signalTourAction("add")}>
+          <AddModal />
+        </div>
       </div>
-      <div className="mx-auto flex h-[4.7rem] max-w-lg items-center justify-around px-4" data-tour="bottom-nav-tabs">
-        {tabs.map(({ path, label, Icon }) => {
-          const selected = location === path;
-          return (
-            <Link key={path} href={path} aria-current={selected ? "page" : undefined} data-testid={`link-nav-${label.toLowerCase()}`} className={`flex h-full w-24 flex-col items-center justify-center transition-colors ${selected ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-              <Icon className="mb-1 h-6 w-6" />
-              <span className="text-[11px] font-semibold tracking-wide">{label}</span>
-            </Link>
-          );
-        })}
+
+      <div className="flex items-center justify-around h-20 px-4" data-tour="bottom-nav-tabs">
+        <Link href="/">
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/")}`}>
+            <Refrigerator className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Koelkast</span>
+          </div>
+        </Link>
+
+        <Link href="/pantry">
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/pantry")}`}>
+            <Package className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Voorraad</span>
+          </div>
+        </Link>
+
+        <Link href="/freezer">
+          <div className={`flex flex-col items-center justify-center w-20 h-full transition-all duration-300 ${active("/freezer")}`}>
+            <Snowflake className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium tracking-wide">Vriezer</span>
+          </div>
+        </Link>
       </div>
-    </nav>
+    </div>
   );
 }
