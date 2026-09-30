@@ -146,7 +146,7 @@ export function HouseholdDialog() {
   return (
     <Drawer open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DrawerTrigger asChild>
-        <button className="relative p-2 rounded-full hover:bg-secondary transition-colors active:scale-95">
+        <button aria-label="Huishouden openen" data-testid="button-household" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border/80 bg-card/80 hover:bg-card transition-colors active:scale-95">
           <Users className="w-6 h-6 text-foreground" />
           {household && (
             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
@@ -154,7 +154,7 @@ export function HouseholdDialog() {
         </button>
       </DrawerTrigger>
 
-      <DrawerContent className="max-w-[430px] mx-auto max-h-[90vh]">
+      <DrawerContent className="mx-auto max-h-[90dvh] max-w-[560px] rounded-t-[2rem] border-border bg-card">
         <DrawerTitle className="sr-only">Huishouden</DrawerTitle>
 
         <div className="overflow-y-auto px-6 pt-6 pb-8 space-y-5">
@@ -314,8 +314,9 @@ export function HouseholdDialog() {
               {(tab === "create" || (tab === "join" && joinMode === "form")) && (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Naam huishouden</label>
+                    <label htmlFor="household-name" className="text-sm font-medium text-muted-foreground mb-1.5 block">Naam huishouden</label>
                     <Input
+                      id="household-name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="bijv. Familie de Vries"
@@ -323,9 +324,10 @@ export function HouseholdDialog() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Pincode</label>
+                    <label htmlFor="household-pin" className="text-sm font-medium text-muted-foreground mb-1.5 block">Pincode</label>
                     <div className="relative">
                       <Input
+                        id="household-pin"
                         value={pin}
                         onChange={(e) => setPin(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (tab === "create" ? handleCreate() : handleJoin())}
@@ -336,9 +338,9 @@ export function HouseholdDialog() {
                       />
                       <button
                         type="button"
+                        aria-label={showPin ? "Pincode verbergen" : "Pincode tonen"}
                         onClick={() => setShowPin((v) => !v)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        tabIndex={-1}
                       >
                         {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>

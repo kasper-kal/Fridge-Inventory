@@ -34,6 +34,7 @@ interface UpdateInput {
 interface ProductsContextValue {
   products: LocalProduct[];
   isLoading: boolean;
+  syncError: string | null;
   fridgeProducts: LocalProduct[];
   freezerProducts: LocalProduct[];
   pantryProducts: LocalProduct[];
@@ -86,6 +87,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   const [products, setProductsRaw] = useState<LocalProduct[]>(() => readStorage(key));
   const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const past   = useRef<LocalProduct[][]>([]);
   const future = useRef<LocalProduct[][]>([]);
@@ -148,9 +150,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const applyServerData = useCallback((data: LocalProduct[]) => {
     if (!Array.isArray(data)) return;
     setProductsRaw((current) => {
-      const serverIds = data.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
-      const localIds  = current.map((p) => `${p.id}:${p.quantity}:${p.name}:${p.storageLocation}`).join(",");
-      if (serverIds === localIds) return current;
+      if (JSON.stringify(data) === JSON.stringify(current)) return current;
       writeStorage(storageKey(householdId), data);
       return data;
     });
@@ -158,15 +158,26 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   const syncFromServer = useCallback((isInitial = false) => {
     apiFetch("/api/products", householdId)
-      .then((data: LocalProduct[]) => applyServerData(data))
-      .catch(() => {})
+      .then((data: LocalProduct[]) => {
+        applyServerData(data);
+        setSyncError(null);
+      })
+      .catch(() => {
+        setSyncError("Voorraad kon niet worden bijgewerkt. Controleer je verbinding en probeer opnieuw.");
+      })
       .finally(() => { if (isInitial) setIsLoading(false); });
   }, [householdId, applyServerData]);
 
   const refetch = useCallback((): Promise<void> => {
     return apiFetch("/api/products", householdId)
-      .then((data: LocalProduct[]) => applyServerData(data))
-      .catch(() => {});
+      .then((data: LocalProduct[]) => {
+        applyServerData(data);
+        setSyncError(null);
+      })
+      .catch((error) => {
+        setSyncError("Voorraad kon niet worden bijgewerkt. Controleer je verbinding en probeer opnieuw.");
+        throw error;
+      });
   }, [householdId, applyServerData]);
 
   useEffect(() => {
@@ -177,35 +188,46 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   }, [syncFromServer]);
 
   const createProduct = useCallback(async (data: CreateInput) => {
-    const tempId = -Date.now();
-    const tempProduct: LocalProduct = { id: tempId, ...data, createdAt: new Date().toISOString() };
-    setProducts((prev) => [tempProduct, ...prev]);
     try {
       const saved: LocalProduct = await apiFetch("/api/products", householdId, {
         method: "POST",
         body: JSON.stringify(data),
       });
-      setProducts((prev) => prev.map((p) => (p.id === tempId ? saved : p)), false);
+      setProducts((prev) => [saved, ...prev]);
+      setSyncError(null);
       return saved.id;
-    } catch {
-      return tempId;
+    } catch (error) {
+      throw new Error("Product niet opgeslagen. Controleer je verbinding en probeer het opnieuw.");
     }
   }, [setProducts, householdId]);
 
   const updateProduct = useCallback(async (id: number, data: UpdateInput) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+    if (id <= 0) {
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
+      return;
+    }
     try {
       const updated: LocalProduct = await apiFetch(`/api/products/${id}`, householdId, {
         method: "PATCH",
         body: JSON.stringify(data),
       });
-      setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)), false);
-    } catch {}
+      setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      setSyncError(null);
+    } catch (error) {
+      throw new Error("Wijziging niet opgeslagen. Controleer je verbinding en probeer het opnieuw.");
+    }
   }, [setProducts, householdId]);
 
   const deleteProduct = useCallback(async (id: number) => {
+    if (id > 0) {
+      try {
+        await apiFetch(`/api/products/${id}`, householdId, { method: "DELETE" });
+      } catch (error) {
+        throw new Error("Product niet verwijderd. Controleer je verbinding en probeer het opnieuw.");
+      }
+    }
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    if (id > 0) apiFetch(`/api/products/${id}`, householdId, { method: "DELETE" }).catch(() => {});
+    setSyncError(null);
   }, [setProducts, householdId]);
 
   const fridgeProducts  = products.filter((p) => p.storageLocation === "fridge");
@@ -220,7 +242,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
   return (
     <ProductsContext.Provider value={{
-      products, isLoading, fridgeProducts, freezerProducts, pantryProducts, summary,
+      products, isLoading, syncError, fridgeProducts, freezerProducts, pantryProducts, summary,
       canUndo, canRedo, undo, redo, refetch,
       createProduct, updateProduct, deleteProduct,
     }}>

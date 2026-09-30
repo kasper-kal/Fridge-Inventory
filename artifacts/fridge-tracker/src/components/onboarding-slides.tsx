@@ -14,7 +14,7 @@ export function hasSeenOnboarding() {
 
 const slides = [
   {
-    dark: true,
+    dark: false,
     icon: <ShoppingCart className="w-10 h-10 text-amber-400" />,
     iconBg: "bg-amber-400/15",
     eyebrow: "Herken je dit?",
@@ -54,7 +54,7 @@ export function OnboardingSlides({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col transition-all duration-500 ${current.dark ? "bg-slate-950" : "bg-background"}`}>
+      <div className={`fixed inset-0 z-50 flex flex-col overflow-hidden transition-all duration-500 ${current.dark ? "bg-slate-950" : "bg-background"}`}>
       {!isLast && (
         <div className="flex justify-end px-6 pt-12">
           <button
@@ -68,18 +68,19 @@ export function OnboardingSlides({ onDone }: { onDone: () => void }) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center animate-in zoom-in-75 duration-500 ${current.iconBg}`}>
+      <div className="relative flex-1 flex flex-col items-center justify-center px-8 text-center gap-7">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-[min(78vw,460px)] w-[min(78vw,460px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/10 bg-[radial-gradient(circle,hsl(42_45%_89%/.45),transparent_68%)]" />
+        <div className={`relative flex h-24 w-24 items-center justify-center rounded-[2rem] shadow-sm animate-in zoom-in-75 duration-500 ${current.iconBg}`}>
           {current.icon}
         </div>
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
           <p className={`text-xs font-semibold uppercase tracking-[0.15em] ${current.dark ? "text-amber-400" : "text-primary"}`}>
             {current.eyebrow}
           </p>
-          <h1 className={`text-3xl font-bold leading-tight ${current.dark ? "text-white" : "text-foreground"}`}>
+          <h1 className={`app-title text-4xl font-semibold leading-[1.05] sm:text-5xl ${current.dark ? "text-white" : "text-foreground"}`}>
             {current.title}
           </h1>
-          <p className={`text-base leading-relaxed max-w-xs mx-auto ${current.dark ? "text-white/55" : "text-muted-foreground"}`}>
+          <p className={`max-w-sm mx-auto text-base leading-relaxed ${current.dark ? "text-white/55" : "text-muted-foreground"}`}>
             {current.body}
           </p>
         </div>

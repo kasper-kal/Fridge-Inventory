@@ -16,7 +16,7 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description, steps, tip, color = "bg-primary/10 text-primary" }: FeatureCardProps) {
   return (
-    <div className="bg-card border border-border rounded-3xl p-5 space-y-3">
+    <div className="surface-card rounded-3xl p-5 space-y-3">
       <div className="flex items-center gap-3">
         <div className={`w-11 h-11 rounded-2xl ${color} flex items-center justify-center shrink-0`}>
           {icon}
@@ -85,21 +85,20 @@ function Highlight({ children }: { children: React.ReactNode }) {
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-[430px] mx-auto">
+    <div className="page-enter min-h-[100dvh] bg-background pb-16 px-5 sm:px-8">
+      <div className="mx-auto max-w-3xl">
       {/* Header */}
       <div className="px-5 pt-12 pb-5 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="flex items-center gap-3 mb-4">
-          <Link href="/account">
-            <button className="p-2 rounded-full hover:bg-secondary transition-colors">
+          <Link href="/account" aria-label="Terug naar account" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card hover:bg-secondary transition-colors">
               <ChevronLeft className="w-5 h-5 text-foreground" />
-            </button>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Gebruikersaanwijzing</h1>
+          <h1 className="app-title text-3xl font-semibold text-foreground sm:text-4xl">Gebruikersaanwijzing</h1>
         </div>
         <p className="text-sm text-muted-foreground">Alles over het gebruik van Koelkast Tracker.</p>
       </div>
 
-      <div className="px-5 space-y-8">
+      <div className="mx-auto max-w-2xl space-y-8">
 
         {/* ── QUICK GUIDE ── */}
         <div className="bg-card border border-border rounded-3xl p-5 space-y-3">
@@ -445,6 +444,7 @@ export default function HelpPage() {
           <p className="text-xs text-muted-foreground">Koelkast Tracker · versie 1.0</p>
           <p className="text-xs text-muted-foreground mt-0.5">Heb je nog vragen? Stuur een berichtje via de instellingen.</p>
         </div>
+      </div>
       </div>
     </div>
   );

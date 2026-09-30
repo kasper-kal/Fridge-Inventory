@@ -14,14 +14,15 @@ interface ShoppingListContextValue {
   items: ShoppingItem[];
   isShared: boolean;
   setShared: (enabled: boolean) => void;
-  addItem: (name: string) => void;
-  toggleItem: (id: string) => void;
-  removeItem: (id: string) => void;
-  clearChecked: () => void;
-  clearAll: () => void;
+  addItem: (name: string) => Promise<void>;
+  toggleItem: (id: string) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  clearChecked: () => Promise<void>;
+  clearAll: () => Promise<void>;
   count: number;
   isSyncing: boolean;
-  refresh: () => void;
+  syncError: string | null;
+  refresh: () => Promise<void>;
 }
 
 const ShoppingListContext = createContext<ShoppingListContextValue | null>(null);
@@ -45,6 +46,7 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   const [sharedItems, setSharedItems] = useState<ShoppingItem[]>([]);
   const [isShared, setIsSharedState] = useState(() => localStorage.getItem(SHARED_KEY) === "true");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const fetchRef = useRef(false);
 
   const items = isShared && household ? sharedItems : localItems;
@@ -55,11 +57,13 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
     setIsSyncing(true);
     try {
       const res = await fetch(apiUrl(`/api/households/${hid}/shopping`));
-      if (res.ok) {
-        const data = await res.json();
-        setSharedItems(data.items ?? []);
-      }
-    } catch {}
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setSharedItems(Array.isArray(data.items) ? data.items : []);
+      setSyncError(null);
+    } catch {
+      setSyncError("De gedeelde lijst kon niet worden geladen. Controleer je verbinding.");
+    }
     finally { setIsSyncing(false); fetchRef.current = false; }
   }, []);
 
@@ -70,10 +74,12 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   const setShared = useCallback((enabled: boolean) => {
     localStorage.setItem(SHARED_KEY, String(enabled));
     setIsSharedState(enabled);
+    if (enabled) setSyncError(null);
+    if (!enabled) setSyncError(null);
   }, []);
 
-  const refresh = useCallback(() => {
-    if (isShared && household?.id) fetchShared(household.id);
+  const refresh = useCallback(async () => {
+    if (isShared && household?.id) await fetchShared(household.id);
   }, [isShared, household?.id, fetchShared]);
 
   const addItem = useCallback(async (name: string) => {
@@ -84,14 +90,16 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name }),
         });
-        if (res.ok) {
-          const data = await res.json();
-          setSharedItems(prev => {
-            if (prev.some(i => i.name.toLowerCase() === name.toLowerCase())) return prev;
-            return [...prev, data.item];
-          });
-        }
-      } catch {}
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        if (!data.item) throw new Error("Missing shopping item");
+        setSharedItems(prev => {
+          if (prev.some(i => i.name.toLowerCase() === name.toLowerCase())) return prev;
+          return [...prev, data.item];
+        });
+      } catch {
+        throw new Error("Item niet toegevoegd aan de gedeelde lijst.");
+      }
     } else {
       setLocalItems(prev => {
         if (prev.some(i => i.name.toLowerCase() === name.toLowerCase())) return prev;
@@ -104,7 +112,7 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
 
   const toggleItem = useCallback(async (id: string) => {
     if (isShared && household?.id) {
-      const item = sharedItems.find(i => i.id === id);
+      const item = sharedItems.find((entry) => entry.id === id);
       if (!item) return;
       try {
         const res = await fetch(apiUrl(`/api/households/${household.id}/shopping/${id}`), {
@@ -112,8 +120,12 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ checked: !item.checked }),
         });
+        if (!res.ok) throw new Error(`API ${res.status}`);
         if (res.ok) setSharedItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
-      } catch {}
+      } catch {
+        setSyncError("Wijziging van de gedeelde lijst is niet opgeslagen.");
+        throw new Error("Wijziging van de gedeelde lijst is niet opgeslagen.");
+      }
     } else {
       setLocalItems(prev => {
         const next = prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
@@ -126,9 +138,13 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   const removeItem = useCallback(async (id: string) => {
     if (isShared && household?.id) {
       try {
-        await fetch(apiUrl(`/api/households/${household.id}/shopping/${id}`), { method: "DELETE" });
+        const res = await fetch(apiUrl(`/api/households/${household.id}/shopping/${id}`), { method: "DELETE" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
         setSharedItems(prev => prev.filter(i => i.id !== id));
-      } catch {}
+      } catch {
+        setSyncError("Item niet verwijderd uit de gedeelde lijst.");
+        throw new Error("Item niet verwijderd uit de gedeelde lijst.");
+      }
     } else {
       setLocalItems(prev => { const next = prev.filter(i => i.id !== id); writeLocal(next); return next; });
     }
@@ -137,9 +153,13 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   const clearChecked = useCallback(async () => {
     if (isShared && household?.id) {
       try {
-        await fetch(apiUrl(`/api/households/${household.id}/shopping?checked=true`), { method: "DELETE" });
+        const res = await fetch(apiUrl(`/api/households/${household.id}/shopping?checked=true`), { method: "DELETE" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
         setSharedItems(prev => prev.filter(i => !i.checked));
-      } catch {}
+      } catch {
+        setSyncError("Afgevinkte items zijn niet verwijderd.");
+        throw new Error("Afgevinkte items zijn niet verwijderd.");
+      }
     } else {
       setLocalItems(prev => { const next = prev.filter(i => !i.checked); writeLocal(next); return next; });
     }
@@ -148,9 +168,13 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   const clearAll = useCallback(async () => {
     if (isShared && household?.id) {
       try {
-        await fetch(apiUrl(`/api/households/${household.id}/shopping`), { method: "DELETE" });
+        const res = await fetch(apiUrl(`/api/households/${household.id}/shopping`), { method: "DELETE" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
         setSharedItems([]);
-      } catch {}
+      } catch {
+        setSyncError("De gedeelde lijst is niet gewist.");
+        throw new Error("De gedeelde lijst is niet gewist.");
+      }
     } else {
       setLocalItems([]); writeLocal([]);
     }
@@ -159,7 +183,7 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   return (
     <ShoppingListContext.Provider value={{
       items, isShared, setShared, addItem, toggleItem, removeItem,
-      clearChecked, clearAll, isSyncing, refresh,
+      clearChecked, clearAll, isSyncing, syncError, refresh,
       count: items.filter(i => !i.checked).length,
     }}>
       {children}

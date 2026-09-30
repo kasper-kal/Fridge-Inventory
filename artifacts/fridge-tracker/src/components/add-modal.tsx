@@ -50,12 +50,14 @@ export function AddModal() {
       <DrawerTrigger asChild>
         <Button
           size="icon"
-          className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+          aria-label="Product toevoegen"
+          data-testid="button-add-product"
+          className="h-14 w-14 rounded-full bg-[hsl(18_62%_49%)] hover:bg-[hsl(18_62%_44%)] text-white shadow-lg shadow-[hsl(18_45%_35%/.18)] transition-all duration-300 hover:scale-105 active:scale-95"
         >
           <Plus className="h-7 w-7" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="bg-card px-6 pb-safe pt-2 border-t border-card-border rounded-t-3xl h-[85vh] max-h-[800px] outline-none">
+      <DrawerContent className="mx-auto h-[86dvh] max-h-[820px] max-w-[600px] rounded-t-[2rem] border-t border-card-border bg-card px-6 pb-safe pt-2 outline-none">
         <DrawerTitle className="sr-only">Item toevoegen</DrawerTitle>
         <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
 
@@ -92,11 +94,12 @@ function MenuView({
 }) {
   return (
     <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <h2 className="text-2xl font-bold text-card-foreground mb-4">Toevoegen aan voorraad</h2>
+      <h2 className="app-title mb-2 text-3xl font-semibold text-card-foreground">Wat heb je meegenomen?</h2>
+      <p className="mb-3 text-sm text-muted-foreground">Kies hoe je het wilt toevoegen.</p>
 
       <button
         onClick={onScan}
-        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+        className="flex min-h-[5.5rem] items-center rounded-2xl border border-border/70 bg-secondary/25 p-4 transition-all hover:bg-secondary/50 group"
       >
         <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
           <Camera className="h-6 w-6" />
@@ -110,7 +113,7 @@ function MenuView({
 
       <button
         onClick={onBarcode}
-        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+        className="flex min-h-[5.5rem] items-center rounded-2xl border border-border/70 bg-secondary/25 p-4 transition-all hover:bg-secondary/50 group"
       >
         <div className="h-12 w-12 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
           <Barcode className="h-6 w-6" />
@@ -124,7 +127,7 @@ function MenuView({
 
       <button
         onClick={onManual}
-        className="flex items-center p-5 bg-secondary/30 hover:bg-secondary/50 rounded-2xl transition-all group"
+        className="flex min-h-[5.5rem] items-center rounded-2xl border border-border/70 bg-secondary/25 p-4 transition-all hover:bg-secondary/50 group"
       >
         <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
           <PenLine className="h-6 w-6" />
@@ -260,16 +263,21 @@ function ManualAddFlow({
     }
     setSaving(true);
     const locationLabel = location === "fridge" ? "koelkast" : location === "freezer" ? "vriezer" : "voorraad";
-    await createProduct({
-      name: name.trim(),
-      quantity: parseFloat(quantity) || 1,
-      unit: unit.trim() || "st",
-      storageLocation: location,
-    });
-    setSaving(false);
-    toast.success(`${name.trim()} toegevoegd aan ${locationLabel}`);
-    onClose();
-    signalTourAction("product-created");
+    try {
+      await createProduct({
+        name: name.trim(),
+        quantity: parseFloat(quantity) || 1,
+        unit: unit.trim() || "st",
+        storageLocation: location,
+      });
+      toast.success(`${name.trim()} toegevoegd aan ${locationLabel}`);
+      onClose();
+      signalTourAction("product-created");
+    } catch {
+      toast.error("Product niet opgeslagen. Controleer je verbinding en probeer het opnieuw.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -433,10 +441,22 @@ function ScanReceiptFlow({ onClose, onBack }: { onClose: () => void; onBack: () 
   const handleSaveAll = async () => {
     if (parsedItems.length === 0) return onClose();
     setSaving(true);
+    const failedItems: typeof parsedItems = [];
+    let savedCount = 0;
     for (const item of parsedItems) {
-      await createProduct({ name: item.name, quantity: item.quantity, unit: item.unit, storageLocation: item.location });
+      try {
+        await createProduct({ name: item.name, quantity: item.quantity, unit: item.unit, storageLocation: item.location });
+        savedCount += 1;
+      } catch {
+        failedItems.push(item);
+      }
     }
     setSaving(false);
+    if (failedItems.length > 0) {
+      setParsedItems(failedItems);
+      toast.error(`${savedCount} opgeslagen. ${failedItems.length} niet opgeslagen; probeer die opnieuw.`);
+      return;
+    }
     const names = parsedItems.slice(0, 2).map(i => i.name).join(", ");
     const extra = parsedItems.length > 2 ? ` en ${parsedItems.length - 2} meer` : "";
     toast.success(`${names}${extra} toegevoegd`);
